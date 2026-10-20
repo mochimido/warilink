@@ -34,7 +34,9 @@ export default defineConfig({
         `cd ../api && WARILINK_DATABASE_URL=${DB_URL} WARILINK_ALLOWED_ORIGINS='["http://localhost:${WEB_PORT}"]' ` +
         `../../.venv/bin/alembic upgrade head && WARILINK_DATABASE_URL=${DB_URL} WARILINK_RECEIPT_STORAGE_DIR=${RECEIPTS_DIR} ` +
         `WARILINK_ALLOWED_ORIGINS='["http://localhost:${WEB_PORT}"]' ` +
-        `../../.venv/bin/uvicorn app.main:app --port ${API_PORT}`,
+        // Node(Next の中継)の keep-alive 5 秒と uvicorn 既定の 5 秒が同じだと、閉じかけの接続を再利用して
+        // ECONNRESET になることがある(2026-10-21 に 4 回中 1 回発生)。サーバー側を長くして競合を避ける
+        `../../.venv/bin/uvicorn app.main:app --port ${API_PORT} --timeout-keep-alive 65`,
       url: `http://127.0.0.1:${API_PORT}/api/v1/health`,
       reuseExistingServer: false,
       timeout: 120_000,
