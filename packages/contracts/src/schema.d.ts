@@ -387,23 +387,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/groups/{public_id}/receipts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Receipt */
-        post: operations["upload_receipt_api_v1_groups__public_id__receipts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/groups/{public_id}/receipts/{receipt_id}": {
         parameters: {
             query?: never;
@@ -432,6 +415,29 @@ export interface paths {
         get: operations["get_receipt_image_api_v1_groups__public_id__receipts__receipt_id__image_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/{public_id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Receipt
+         * @description 安い確認から順に行い、重い画像処理(デコード・再エンコード)は最後にする。
+         *
+         *     1. メンバー確認 → 2. バイト数 → 3. 同じ画像(枠を消費しない)→ 4. ワーカー稼働 → 5. 利用枠(ロックなし)
+         *     → 6. 流量制限 → 7. ヘッダーの形式・寸法 → 8. デコード・EXIF 除去 → 9. 枠の確保(ロック)と制限の再確認 → 保存
+         */
+        post: operations["upload_receipt_api_v1_groups__public_id__receipts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1945,41 +1951,6 @@ export interface operations {
             };
         };
     };
-    upload_receipt_api_v1_groups__public_id__receipts_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_receipt_api_v1_groups__public_id__receipts_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_receipt_api_v1_groups__public_id__receipts__receipt_id__get: {
         parameters: {
             query?: never;
@@ -2030,6 +2001,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_receipt_api_v1_groups__public_id__receipts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_receipt_api_v1_groups__public_id__receipts_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptOut"];
+                };
             };
             /** @description Validation Error */
             422: {

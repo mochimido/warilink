@@ -1179,58 +1179,6 @@
         }
       }
     },
-    "/api/v1/groups/{public_id}/receipts": {
-      "post": {
-        "tags": [
-          "receipts"
-        ],
-        "summary": "Upload Receipt",
-        "operationId": "upload_receipt_api_v1_groups__public_id__receipts_post",
-        "parameters": [
-          {
-            "name": "public_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Public Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_receipt_api_v1_groups__public_id__receipts_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReceiptOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/groups/{public_id}/receipts/{receipt_id}": {
       "get": {
         "tags": [
@@ -1312,6 +1260,60 @@
         "responses": {
           "200": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/receipts": {
+      "post": {
+        "tags": [
+          "receipts",
+          "receipts"
+        ],
+        "summary": "Upload Receipt",
+        "description": "安い確認から順に行い、重い画像処理(デコード・再エンコード)は最後にする。\n\n1. メンバー確認 → 2. バイト数 → 3. 同じ画像(枠を消費しない)→ 4. ワーカー稼働 → 5. 利用枠(ロックなし)\n→ 6. 流量制限 → 7. ヘッダーの形式・寸法 → 8. デコード・EXIF 除去 → 9. 枠の確保(ロック)と制限の再確認 → 保存",
+        "operationId": "upload_receipt_api_v1_groups__public_id__receipts_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_receipt_api_v1_groups__public_id__receipts_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",

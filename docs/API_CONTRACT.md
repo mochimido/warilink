@@ -206,3 +206,6 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 
 追加エラーコード: `OCR_UNAVAILABLE`(503), `OCR_QUOTA_EXCEEDED`(429), `IMAGE_TOO_LARGE`(413), `IMAGE_TYPE_UNSUPPORTED` /
 `IMAGE_UNREADABLE`(415), `IMAGE_EMPTY`, `IMAGE_EXPIRED`(410), `RECEIPT_NOT_FOUND`, `RECEIPT_ALREADY_USED`。
+2026-10-20 追加(P04): `IMAGE_TOO_MANY_PIXELS`(413、ヘッダーの寸法で判定)、`LENGTH_REQUIRED`(411、Content-Length のない本文)、
+`OCR_RATE_LIMITED`(429、利用者・グループの流量または読み取り待ちの数)、`OCR_BUSY`(503、全体の待ち行列が上限)。
+本文の大きさは multipart の解析前に `Content-Length` で判定する(上限 = `receipt_max_bytes` + 64KB)。

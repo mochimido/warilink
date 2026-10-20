@@ -46,7 +46,14 @@ class Settings(BaseSettings):
     # レシート画像・OCR ジョブ(Phase 3)
     receipt_storage_dir: str = "./var/receipts"  # API とワーカーで共有するディレクトリ(コンテナではボリューム)
     receipt_max_bytes: int = 10 * 1024 * 1024
-    receipt_max_pixels: int = 40_000_000  # 展開爆弾対策
+    receipt_max_pixels: int = 40_000_000  # 展開爆弾対策(ヘッダーの寸法で、デコード前に判定)
+    receipt_max_side: int = 12_000  # 極端に細長い画像の拒否(1 辺の上限 px)
+    # 濫用対策(OCR は CPU が重い)。ゲストは Cookie を消せば別人になれるため、利用者単位だけでなく
+    # グループ単位・全体の待ち行列でも制限する
+    ocr_rate_identity_per_10min: int = 5
+    ocr_rate_group_per_hour: int = 30
+    ocr_max_pending_per_identity: int = 3  # 読み取り待ち・処理中のジョブ数
+    ocr_max_queue_backlog: int = 100  # 全体の読み取り待ち。超えたら 503(時間をおいて再試行)
     receipt_image_retention_days: int = 30  # 期限後は画像だけ削除(`python -m app.ocr.cli purge-images`)
     ocr_job_max_attempts: int = 3
     ocr_job_lease_seconds: int = 120

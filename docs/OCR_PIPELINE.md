@@ -30,6 +30,30 @@
 | 保存期間 | `receipt_image_retention_days`(既定 30 日)。`python -m app.ocr.cli purge-images` で画像だけ削除(下書き・訂正記録は残る) |
 | 閲覧 | `GET .../receipts/{id}/image` はグループのメンバーのみ(他は 404)、`Cache-Control: private, no-store` |
 
+### 2.1 確認の順序と濫用対策(2026-10-20、P04)
+
+重い処理(デコード・EXIF 反映・JPEG 再エンコード)は、安い確認をすべて通った後にだけ行う。
+
+| 順 | 確認 | 拒否 |
+|---|---|---|
+| 0 | `Content-Length`(multipart 解析・一時ファイル書き込みの前。ルートクラス `LimitedUploadRoute`) | 411 / 413 |
+| 1 | グループのメンバー | 404 |
+| 2 | 読み込んだバイト数 | 413 / 422 |
+| 3 | 同じ画像(元画像の SHA-256。枠を消費せず既存を返す) | - |
+| 4 | ワーカーの稼働 | 503 `OCR_UNAVAILABLE` |
+| 5 | 利用枠(ロックなしの事前確認) | 429 `OCR_QUOTA_EXCEEDED` |
+| 6 | 流量: 利用者 10 分 `ocr_rate_identity_per_10min`(5)、グループ 1 時間 `ocr_rate_group_per_hour`(30)、利用者の読み取り待ち `ocr_max_pending_per_identity`(3) | 429 `OCR_RATE_LIMITED` |
+| 6 | 全体の読み取り待ち `ocr_max_queue_backlog`(100) | 503 `OCR_BUSY` |
+| 7 | ヘッダーだけで形式・寸法: 画素数 `receipt_max_pixels`、1 辺 `receipt_max_side`(12,000px) | 413 `IMAGE_TOO_MANY_PIXELS` / 415 |
+| 8 | デコード・EXIF 除去・再エンコード | 415 |
+| 9 | 利用者の行をロックして枠を確保 → グループの行をロックして流量を再確認(同時アップロードでも超えない) → 保存 | 429 |
+
+- Pillow の `MAX_IMAGE_PIXELS` は上限の 2 倍までは警告だけなので、寸法を明示的に比べて拒否する。
+- ゲストは Cookie を消せば別の利用者になれる。そのため利用者単位の枠だけに頼らず、グループ単位と全体の待ち行列でも CPU の消費を抑える。
+  IP 単位の制限は入れていない(共有回線の誤検知を避けるため。必要ならリバースプロキシ側で行う)。
+- 保存後に DB への登録が失敗した場合は、画像ファイルを消し、枠も消費しない(トランザクションごと取り消す)。
+- デコード時間の上限(タイムアウト)は設けていない。画素数と 1 辺の上限で処理量を抑えている。
+
 ## 3. ジョブ(DB キュー)
 
 - 取得: `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING`。同時に動く複数ワーカーが同じジョブを取らない。

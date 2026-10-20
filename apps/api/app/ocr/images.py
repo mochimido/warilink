@@ -29,19 +29,50 @@ class NormalizedImage:
     original_sha256: str
 
 
+@dataclass
+class ProbedImage:
+    format: str
+    width: int
+    height: int
+
+
+def check_size(n: int) -> None:
+    s = get_settings()
+    if n == 0:
+        raise ApiError(422, "IMAGE_EMPTY", "画像ファイルが空です")
+    if n > s.receipt_max_bytes:
+        raise ApiError(413, "IMAGE_TOO_LARGE", f"画像は{s.receipt_max_bytes // (1024 * 1024)}MB以下にしてください")
+
+
+def probe(raw: bytes) -> ProbedImage:
+    """ヘッダーだけを読み、形式と寸法を確かめる(画素のデコードはしない)。重い処理の前に呼ぶ。"""
+    s = get_settings()
+    check_size(len(raw))
+    try:
+        with Image.open(io.BytesIO(raw)) as im:  # 遅延読み込み: ここではヘッダーのみ
+            fmt, (w, h) = im.format or "", im.size
+    except Image.DecompressionBombError:
+        # Pillow は寸法がその上限の 2 倍を超えるとヘッダーの時点で拒否する
+        raise ApiError(413, "IMAGE_TOO_MANY_PIXELS", "画像の解像度が大きすぎます。縮小してから選んでください") from None
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
+        raise ApiError(415, "IMAGE_UNREADABLE", "画像を読み込めませんでした。別の画像を選んでください") from None
+    if fmt not in ALLOWED:
+        raise ApiError(415, "IMAGE_TYPE_UNSUPPORTED", "JPEG・PNG・WebP の画像を選んでください(HEIC は未対応です)")
+    if w <= 0 or h <= 0:
+        raise ApiError(415, "IMAGE_UNREADABLE", "画像を読み込めませんでした。別の画像を選んでください")
+    # Pillow の MAX_IMAGE_PIXELS は上限の 2 倍まで警告だけなので、ここで明示的に拒否する
+    if w * h > s.receipt_max_pixels or max(w, h) > s.receipt_max_side:
+        raise ApiError(413, "IMAGE_TOO_MANY_PIXELS", "画像の解像度が大きすぎます。縮小してから選んでください")
+    return ProbedImage(fmt, w, h)
+
+
 def normalize_upload(raw: bytes) -> NormalizedImage:
     s = get_settings()
-    if len(raw) == 0:
-        raise ApiError(422, "IMAGE_EMPTY", "画像ファイルが空です")
-    if len(raw) > s.receipt_max_bytes:
-        raise ApiError(413, "IMAGE_TOO_LARGE", f"画像は{s.receipt_max_bytes // (1024 * 1024)}MB以下にしてください")
+    probe(raw)
     Image.MAX_IMAGE_PIXELS = s.receipt_max_pixels
     try:
-        with Image.open(io.BytesIO(raw)) as probe:
-            fmt = probe.format or ""
-            probe.verify()
-        if fmt not in ALLOWED:
-            raise ApiError(415, "IMAGE_TYPE_UNSUPPORTED", "JPEG・PNG・WebP の画像を選んでください(HEIC は未対応です)")
+        with Image.open(io.BytesIO(raw)) as probe_img:
+            probe_img.verify()
         with Image.open(io.BytesIO(raw)) as img:
             img = ImageOps.exif_transpose(img)
             img = img.convert("RGB")
