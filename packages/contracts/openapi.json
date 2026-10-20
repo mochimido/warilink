@@ -734,6 +734,284 @@
         }
       }
     },
+    "/api/v1/groups/{public_id}/expenses/search": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Search Expenses",
+        "description": "グループ内の有効な支出だけを検索する(他のグループの支出は対象にならない)。",
+        "operationId": "search_expenses_api_v1_groups__public_id__expenses_search_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "food",
+                    "drinks",
+                    "groceries",
+                    "transport",
+                    "lodging",
+                    "entertainment",
+                    "daily",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "uncategorized",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Uncategorized"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "payer_member_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payer Member Id"
+            }
+          },
+          {
+            "name": "created_by_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Created By Me"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "amount_desc",
+                "amount_asc"
+              ],
+              "type": "string",
+              "default": "date_desc",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseSearchOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/stats": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Group Stats",
+        "description": "グループ内の集計(このグループのメンバーへの表示のためだけに計算する。広告・外部提供には使わない)。",
+        "operationId": "group_stats_api_v1_groups__public_id__expenses_stats_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupStatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/groups/{public_id}/expenses/preview": {
       "post": {
         "tags": [
@@ -2318,6 +2596,36 @@
         ],
         "title": "BreakdownOut"
       },
+      "CategoryStat": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "count",
+          "total_minor"
+        ],
+        "title": "CategoryStat"
+      },
       "DestinationIn": {
         "properties": {
           "kind": {
@@ -2468,6 +2776,27 @@
             ],
             "title": "Occurred On"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
           "payers": {
             "items": {
               "$ref": "#/components/schemas/Payer"
@@ -2560,6 +2889,17 @@
             ],
             "title": "Occurred On"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -2646,6 +2986,27 @@
             ],
             "title": "Occurred On"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
           "payers": {
             "items": {
               "$ref": "#/components/schemas/Payer"
@@ -2702,6 +3063,17 @@
               }
             ],
             "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
           },
           "version": {
             "type": "integer",
@@ -2777,6 +3149,27 @@
             ],
             "title": "Occurred On"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
           "payers": {
             "items": {
               "$ref": "#/components/schemas/Payer"
@@ -2833,6 +3226,44 @@
           "projected_settlement"
         ],
         "title": "ExpensePreviewOut"
+      },
+      "ExpenseSearchOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExpenseOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "total_amount_minor": {
+            "type": "integer",
+            "title": "Total Amount Minor"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total_count",
+          "total_amount_minor",
+          "next_cursor"
+        ],
+        "title": "ExpenseSearchOut"
       },
       "GroupCreate": {
         "properties": {
@@ -2911,6 +3342,66 @@
           "members"
         ],
         "title": "GroupOut"
+      },
+      "GroupStatsOut": {
+        "properties": {
+          "expense_count": {
+            "type": "integer",
+            "title": "Expense Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          },
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryStat"
+            },
+            "type": "array",
+            "title": "By Category"
+          },
+          "by_month": {
+            "items": {
+              "$ref": "#/components/schemas/MonthStat"
+            },
+            "type": "array",
+            "title": "By Month"
+          },
+          "by_member": {
+            "items": {
+              "$ref": "#/components/schemas/MemberStat"
+            },
+            "type": "array",
+            "title": "By Member"
+          },
+          "unconfirmed_transfer_count": {
+            "type": "integer",
+            "title": "Unconfirmed Transfer Count"
+          },
+          "unconfirmed_transfer_minor": {
+            "type": "integer",
+            "title": "Unconfirmed Transfer Minor"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expense_count",
+          "total_minor",
+          "by_category",
+          "by_month",
+          "by_member",
+          "unconfirmed_transfer_count",
+          "unconfirmed_transfer_minor",
+          "notes"
+        ],
+        "title": "GroupStatsOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -3242,6 +3733,29 @@
         ],
         "title": "MemberOut"
       },
+      "MemberStat": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "title": "Member Id"
+          },
+          "paid_minor": {
+            "type": "integer",
+            "title": "Paid Minor"
+          },
+          "share_minor": {
+            "type": "integer",
+            "title": "Share Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "paid_minor",
+          "share_minor"
+        ],
+        "title": "MemberStat"
+      },
       "MemberValue": {
         "properties": {
           "member_id": {
@@ -3284,6 +3798,29 @@
           "names"
         ],
         "title": "MembersAdd"
+      },
+      "MonthStat": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "count",
+          "total_minor"
+        ],
+        "title": "MonthStat"
       },
       "OptimizationOut": {
         "properties": {

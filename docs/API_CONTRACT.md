@@ -253,3 +253,18 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
   `DESTINATIONS_UNAVAILABLE`(503、鍵が未設定)、`DESTINATION_INTEGRITY`(500、改ざん・付け替え)。
 - 入力の検証: 銀行コード 4 桁・支店コード 3 桁・口座番号 7 桁・種類(普通/当座/貯蓄)・名義(正規化してカタカナ・英大文字・数字)。
   銀行名・支店名とコードの対応は検証していない(銀行マスタを持たない)。
+
+
+### P09 追加(2026-10-20): カテゴリ・検索・集計
+
+- 支出の入力(`ExpenseIn`)に `category`(`food` / `drinks` / `groceries` / `transport` / `lodging` / `entertainment` / `daily` / `other`、
+  省略・null = 未分類)を追加。出力(`ExpenseOut`)にも `category`。既存の支出は未分類のまま。金額・端数の計算は変わらない。
+
+| Method | Path | 説明 | 認可 |
+|---|---|---|---|
+| GET | `/groups/{public_id}/expenses/search` | `q`(内容の部分一致。`%` `_` は文字として扱う)・`category` / `uncategorized`・`date_from` / `date_to`(支出日、未入力は登録日 JST)・`payer_member_id`・`created_by_me`・`sort`(`date_desc` / `date_asc` / `amount_desc` / `amount_asc`)・`limit`(1〜100)・`cursor` → `{items, total_count, total_amount_minor, next_cursor}` | member(他は 404) |
+| GET | `/groups/{public_id}/expenses/stats` | `date_from` / `date_to` → カテゴリ別・月別・メンバー別(`paid_minor` 立て替えた額 / `share_minor` 負担する額)・受取確認待ちの送金 | member |
+
+- `cursor` は不透明な文字列(中身は件数のオフセット。上限 10,000)。不正・改ざんは 422 `INVALID_CURSOR`。
+- 検索・集計はそのグループの有効な支出だけ。他グループのメンバー ID で絞っても他グループの支出は返らない。
+- 集計はメンバーへの表示のためだけに計算する。広告・外部提供への再利用はしない(同意の対象外の用途として扱わない)。

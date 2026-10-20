@@ -79,3 +79,6 @@ export type Destination = Schemas["DestinationOut"];
 export type DestinationReveal = Schemas["DestinationRevealOut"];
 export type DestinationInput = Schemas["DestinationIn"];
 export type PayerDestination = Schemas["PayerDestinationOut"];
+
+export type ExpenseSearch = Schemas["ExpenseSearchOut"];
+export type GroupStats = Schemas["GroupStatsOut"];

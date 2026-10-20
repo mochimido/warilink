@@ -159,6 +159,8 @@ class Expense(Base):
     state: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     occurred_on: Mapped[date | None] = mapped_column(Date)
+    # P09: カテゴリ(NULL = 未分類。既存の支出は未分類のまま)
+    category: Mapped[str | None] = mapped_column(String(16))
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("identities.id"), nullable=False)
     created_at: Mapped[datetime] = _created()
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(),
@@ -166,6 +168,9 @@ class Expense(Base):
     __table_args__ = (
         CheckConstraint("state IN ('active','deleted')", name="ck_expense_state"),
         CheckConstraint("currency = 'JPY'", name="ck_expense_currency_jpy"),
+        CheckConstraint("category IS NULL OR category IN ('food','drinks','groceries','transport','lodging',"
+                        "'entertainment','daily','other')", name="ck_expense_category"),
+        Index("ix_expense_group_occurred", "group_id", "occurred_on"),
     )
 
 

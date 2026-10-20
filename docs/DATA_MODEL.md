@@ -172,3 +172,9 @@
   KEK は DB・バックアップに入らない。鍵の入れ替えは `python -m app.modules.payment_destinations.cli rotate`(DEK の包み直し)。
 - 監査(`audit_events`): destination.create / change / sharing / reveal_own / disclose / erase。ID と版だけを記録する。
 - マイグレーション `20261021_6b7a2ce8acf1_p08_payment_destinations.py` は追加のみ。
+
+
+## 10. 支出のカテゴリ(P09、2026-10-20)
+
+- `expenses.category`(NULL 許可、CHECK で 8 種類に限定)と索引 `ix_expense_group_occurred(group_id, occurred_on)` を追加。
+- マイグレーション `20261021_69e7bf0883a7_p09_expense_category.py` は追加のみ(既存の支出は NULL = 未分類)。

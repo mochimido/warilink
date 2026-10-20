@@ -307,6 +307,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/groups/{public_id}/expenses/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Expenses
+         * @description グループ内の有効な支出だけを検索する(他のグループの支出は対象にならない)。
+         */
+        get: operations["search_expenses_api_v1_groups__public_id__expenses_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/{public_id}/expenses/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Group Stats
+         * @description グループ内の集計(このグループのメンバーへの表示のためだけに計算する。広告・外部提供には使わない)。
+         */
+        get: operations["group_stats_api_v1_groups__public_id__expenses_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/groups/{public_id}/expenses/preview": {
         parameters: {
             query?: never;
@@ -854,6 +894,15 @@ export interface components {
             /** Receipt Total Minor */
             receipt_total_minor?: number | null;
         };
+        /** CategoryStat */
+        CategoryStat: {
+            /** Category */
+            category: string | null;
+            /** Count */
+            count: number;
+            /** Total Minor */
+            total_minor: number;
+        };
         /** DestinationIn */
         DestinationIn: {
             /**
@@ -911,6 +960,8 @@ export interface components {
             amount_minor: number;
             /** Occurred On */
             occurred_on?: string | null;
+            /** Category */
+            category?: ("food" | "drinks" | "groceries" | "transport" | "lodging" | "entertainment" | "daily" | "other") | null;
             /** Payers */
             payers: components["schemas"]["Payer"][];
             split: components["schemas"]["SplitIn"];
@@ -935,6 +986,8 @@ export interface components {
             split_mode: string;
             /** Occurred On */
             occurred_on: string | null;
+            /** Category */
+            category?: string | null;
             /** Version */
             version: number;
             /** State */
@@ -968,6 +1021,8 @@ export interface components {
             amount_minor: number;
             /** Occurred On */
             occurred_on?: string | null;
+            /** Category */
+            category?: ("food" | "drinks" | "groceries" | "transport" | "lodging" | "entertainment" | "daily" | "other") | null;
             /** Payers */
             payers: components["schemas"]["Payer"][];
             split: components["schemas"]["SplitIn"];
@@ -986,6 +1041,8 @@ export interface components {
             split_mode: string;
             /** Occurred On */
             occurred_on: string | null;
+            /** Category */
+            category?: string | null;
             /** Version */
             version: number;
             /** State */
@@ -1011,6 +1068,8 @@ export interface components {
             amount_minor: number;
             /** Occurred On */
             occurred_on?: string | null;
+            /** Category */
+            category?: ("food" | "drinks" | "groceries" | "transport" | "lodging" | "entertainment" | "daily" | "other") | null;
             /** Payers */
             payers: components["schemas"]["Payer"][];
             split: components["schemas"]["SplitIn"];
@@ -1021,6 +1080,17 @@ export interface components {
         ExpensePreviewOut: {
             breakdown: components["schemas"]["BreakdownOut"];
             projected_settlement: components["schemas"]["SettlementPlanOut"] | null;
+        };
+        /** ExpenseSearchOut */
+        ExpenseSearchOut: {
+            /** Items */
+            items: components["schemas"]["ExpenseOut"][];
+            /** Total Count */
+            total_count: number;
+            /** Total Amount Minor */
+            total_amount_minor: number;
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** GroupCreate */
         GroupCreate: {
@@ -1047,6 +1117,25 @@ export interface components {
             is_owner: boolean;
             /** Members */
             members: components["schemas"]["MemberOut"][];
+        };
+        /** GroupStatsOut */
+        GroupStatsOut: {
+            /** Expense Count */
+            expense_count: number;
+            /** Total Minor */
+            total_minor: number;
+            /** By Category */
+            by_category: components["schemas"]["CategoryStat"][];
+            /** By Month */
+            by_month: components["schemas"]["MonthStat"][];
+            /** By Member */
+            by_member: components["schemas"]["MemberStat"][];
+            /** Unconfirmed Transfer Count */
+            unconfirmed_transfer_count: number;
+            /** Unconfirmed Transfer Minor */
+            unconfirmed_transfer_minor: number;
+            /** Notes */
+            notes: string[];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1167,6 +1256,15 @@ export interface components {
             /** Is Me */
             is_me: boolean;
         };
+        /** MemberStat */
+        MemberStat: {
+            /** Member Id */
+            member_id: string;
+            /** Paid Minor */
+            paid_minor: number;
+            /** Share Minor */
+            share_minor: number;
+        };
         /** MemberValue */
         MemberValue: {
             /** Member Id */
@@ -1178,6 +1276,15 @@ export interface components {
         MembersAdd: {
             /** Names */
             names: string[];
+        };
+        /** MonthStat */
+        MonthStat: {
+            /** Month */
+            month: string;
+            /** Count */
+            count: number;
+            /** Total Minor */
+            total_minor: number;
         };
         /** OptimizationOut */
         OptimizationOut: {
@@ -2098,6 +2205,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExpenseDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_expenses_api_v1_groups__public_id__expenses_search_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                category?: ("food" | "drinks" | "groceries" | "transport" | "lodging" | "entertainment" | "daily" | "other") | null;
+                uncategorized?: boolean;
+                date_from?: string | null;
+                date_to?: string | null;
+                payer_member_id?: string | null;
+                created_by_me?: boolean;
+                sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpenseSearchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_stats_api_v1_groups__public_id__expenses_stats_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupStatsOut"];
                 };
             };
             /** @description Validation Error */
