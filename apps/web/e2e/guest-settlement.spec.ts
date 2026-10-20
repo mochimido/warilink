@@ -16,6 +16,11 @@ test("登録なしで開始→4人→支出→精算確定→コピー→送金�
   await b.getByRole("button", { name: "Bさん" }).click();
   await expect(b.getByRole("heading", { name: "週末キャンプ" })).toBeVisible();
 
+  // 権限: 招待URLの発行は作成者だけ。参加者 B にはボタンを出さず理由を示す
+  await openTab(b, "設定");
+  await expect(b.getByText("招待URLはグループを作成した人が発行できます")).toBeVisible();
+  await expect(b.getByRole("button", { name: "招待URLを作成" })).toHaveCount(0);
+
   // A が 10,001 円を立替、4人で均等割り(端数1円はサーバーが決定論的に配分)
   await openTab(a, "支出を追加");
   await a.getByLabel("内容").fill("バーベキュー");

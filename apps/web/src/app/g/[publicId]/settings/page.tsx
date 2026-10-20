@@ -43,7 +43,12 @@ export default function SettingsPage() {
             <button type="submit" className="secondary" style={{ flex: "0 0 auto" }}>追加</button>
           </div>
         </form>
-        {group.is_owner && <InviteBox publicId={group.public_id} />}
+        <p className="muted">名前だけのメンバー(アプリを使わない人)は、参加者なら誰でも追加できます。</p>
+        {group.is_owner ? (
+          <InviteBox publicId={group.public_id} />
+        ) : (
+          <p className="muted">招待URLはグループを作成した人が発行できます。</p>
+        )}
         {error && <p className="error" role="alert">{error}</p>}
       </section>
 

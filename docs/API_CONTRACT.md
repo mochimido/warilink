@@ -127,7 +127,7 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 | POST | `/groups` | 作成(自分+名前だけのメンバー) | guest+ |
 | GET | `/groups/{public_id}` | 概要・メンバー | member(非メンバー404) |
 | POST | `/groups/{public_id}/members` | 名前だけのメンバー追加 | member |
-| POST | `/groups/{public_id}/invites` | 招待トークン発行(生値は一度だけ返す) | owner |
+| POST | `/groups/{public_id}/invites` | 招待トークン発行(生値は一度だけ返す) | owner(member は 403) |
 | GET | `/invites/{token}` | 参加前確認(グループ名・未紐付けの名前のみ) | guest+ |
 | POST | `/invites/{token}/join` | 名前を選んで/新規で参加。同じ名前の同時選択は1人だけ成功(409) | guest+ |
 | GET | `/groups/{public_id}/expenses` | 一覧 | member |
@@ -148,6 +148,25 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 送金(`TransferOut`)には `status_label`(日本語の表示名)と `is_recipient_confirmed` を付ける。`reported_paid` は
 「送金申告済み(受取人は未確認)」で、確認済みとは表示しない。確定バッチの `progress`、プレビューの `locked_progress`、
 残高行の `reported_unconfirmed_out_minor` / `reported_unconfirmed_in_minor` は 2026-10-20 に追加(既存項目は不変。詳細は SETTLEMENT_ENGINE.md)。
+
+### 権限表(2026-10-20 確定、P02)
+
+| 操作 | owner | member(参加済み) | 精算の当事者 | 非メンバー | 未認証 |
+|---|---|---|---|---|---|
+| グループ・メンバー・支出・残高・精算案の閲覧 | ○ | ○ | - | 404 | 401 |
+| 名前だけのメンバー追加 `POST /members` | ○ | ○ | - | 404 | 401 |
+| 支出の登録・訂正・削除、精算案の確定 | ○ | ○ | - | 404 | 401 |
+| 招待URLの発行 `POST /invites` | ○ | 403 | - | 404 | 401 |
+| 送金1件の閲覧 | - | 当事者以外 404 | ○ | 404 | 401 |
+| 送金申告 / 受取確認 | - | 当事者以外 404 | 支払者のみ / 受取人のみ(逆は 403) | 404 | 401 |
+
+- 判断: PRD の「group_owner: 参加者管理」と、この表の「メンバー追加は member も可」は衝突しうる。
+  既存の画面(設定タブの追加フォーム)と、アプリを使わない人を後から足す導線を壊さないため、**追加は member も可**、
+  **招待の発行(=第三者がグループに入る経路)は owner のみ**とした。メンバーの削除・改名・グループ閉鎖は未実装で、
+  実装時は owner のみとする。メンバー追加は `audit_events(action=group.members.add)` に記録する。
+- 認可は URL の公開IDだけで決めない。すべて「Cookie のセッション → identity → そのグループの有効な membership」で判定し、
+  支出・送金は ID がそのグループ(送金は当事者)に属することも確かめる(他グループの ID は 404)。
+- 招待: 期限切れ・取り消し・回数切れは 404 `INVITE_INVALID`。参加済みの本人は回数切れ後も冪等に参加済みとして返す(回数を消費しない)。
 
 精算レスポンスの `optimization`:
 

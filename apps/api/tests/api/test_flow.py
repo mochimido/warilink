@@ -303,3 +303,96 @@ def test_reported_and_confirmed_are_distinct(user_factory):
     r = a.post(f"/settlements/{t_c['id']}/confirm-received").json()
     assert r["status"] == "recipient_confirmed"
     assert c.post(f"/settlements/{t_c['id']}/report-paid").json()["status"] == "recipient_confirmed"
+
+
+def test_permission_matrix_owner_member_outsider_anonymous(user_factory):
+    """権限表(docs/API_CONTRACT.md「権限表」)を主体ごとに確かめる。非メンバーは 404、未認証は 401。"""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    owner, member, outsider = user_factory(), user_factory(), user_factory()
+    anon = TestClient(app, headers={"X-WariLink-CSRF": "1"})
+    g, ids = make_group(owner)
+    pid = g["public_id"]
+    join_as(member, owner, pid, "Bさん")
+    exp = owner.post(f"/groups/{pid}/expenses", json=equal_expense(ids["Aさん"], 1200, list(ids.values()))).json()
+    eid = exp["id"]
+    g2, ids2 = make_group(outsider)
+
+    reads = [f"/groups/{pid}", f"/groups/{pid}/members", f"/groups/{pid}/expenses", f"/groups/{pid}/expenses/{eid}",
+             f"/groups/{pid}/expenses/{eid}/revisions", f"/groups/{pid}/balances",
+             f"/groups/{pid}/settlement-batches", f"/groups/{pid}/settlement-batches/current"]
+    for path in reads:
+        assert owner.get(path).status_code == 200, path
+        assert member.get(path).status_code == 200, path
+        assert outsider.get(path).status_code == 404, path
+        assert anon.get(f"/api/v1{path}").status_code == 401, path
+
+    # 書き込み: 非メンバーは存在を知らされない(404)。メンバーの追加・支出・精算はメンバー全員に許可
+    writes = [(f"/groups/{pid}/members", {"names": ["Eさん"]}),
+              (f"/groups/{pid}/expenses", equal_expense(ids["Aさん"], 300, [ids["Aさん"]])),
+              (f"/groups/{pid}/settlements/preview", None),
+              (f"/groups/{pid}/invites", {})]
+    for path, body in writes:
+        assert outsider.post(path, json=body).status_code == 404, path
+        assert anon.post(f"/api/v1{path}", json=body).status_code == 401, path
+    assert member.post(f"/groups/{pid}/members", json={"names": ["Eさん"]}).status_code == 201
+    r = member.post(f"/groups/{pid}/expenses", json=equal_expense(ids["Bさん"], 300, [ids["Bさん"]]))
+    assert r.status_code == 201
+    # 招待URLの発行はオーナーだけ(メンバーは 403、非メンバーは 404)
+    assert member.post(f"/groups/{pid}/invites", json={}).status_code == 403
+    assert owner.post(f"/groups/{pid}/invites", json={}).status_code == 201
+
+    # IDOR: 自分のグループの URL に他グループの支出 ID を入れても見えない・変えられない
+    assert outsider.get(f"/groups/{g2['public_id']}/expenses/{eid}").status_code == 404
+    assert outsider.delete(f"/groups/{g2['public_id']}/expenses/{eid}",
+                           headers={"If-Match": str(exp["version"])}).status_code == 404
+    assert outsider.put(f"/groups/{g2['public_id']}/expenses/{eid}", headers={"If-Match": str(exp["version"])},
+                        json=equal_expense(ids2["Aさん"], 1, [ids2["Aさん"]])).status_code == 404
+    assert owner.get(f"/groups/{pid}/expenses/{eid}").json()["amount_minor"] == 1200
+    # 他グループの名前行を招待で横取りできない
+    inv2 = outsider.post(f"/groups/{g2['public_id']}/invites", json={}).json()
+    r = member.post(f"/invites/{inv2['token']}/join", json={"claim_member_id": ids["Cさん"]})
+    assert r.status_code == 409
+
+
+def test_invite_expired_exhausted_and_revoked_are_rejected(user_factory):
+    from sqlalchemy import update as sa_update
+
+    from app.core.db import get_engine
+    from app.core.security import hash_token
+    from app.models.tables import Invitation
+
+    a = user_factory()
+    g, ids = make_group(a)
+    pid = g["public_id"]
+    one = a.post(f"/groups/{pid}/invites", json={"max_uses": 1}).json()
+    u1, u2 = user_factory(), user_factory()
+    assert u1.post(f"/invites/{one['token']}/join", json={"claim_member_id": ids["Bさん"]}).status_code == 200
+    # 同じ人の再参加は冪等(回数を消費しない)、別の人は回数切れで 404
+    assert u1.post(f"/invites/{one['token']}/join", json={"claim_member_id": ids["Bさん"]}).status_code == 200
+    r = u2.post(f"/invites/{one['token']}/join", json={"claim_member_id": ids["Cさん"]})
+    assert r.status_code == 404 and r.json()["code"] == "INVITE_INVALID"
+    assert u2.get(f"/invites/{one['token']}").status_code == 404
+
+    expired = a.post(f"/groups/{pid}/invites", json={}).json()
+    revoked = a.post(f"/groups/{pid}/invites", json={}).json()
+    with get_engine().begin() as conn:
+        conn.execute(sa_update(Invitation).where(Invitation.token_hash == hash_token(expired["token"]))
+                     .values(expires_at=func_now_minus_minute()))
+        conn.execute(sa_update(Invitation).where(Invitation.token_hash == hash_token(revoked["token"]))
+                     .values(revoked_at=func_now_minus_minute()))
+    for tok in (expired["token"], revoked["token"]):
+        assert u2.get(f"/invites/{tok}").status_code == 404
+        assert u2.post(f"/invites/{tok}/join", json={"claim_member_id": ids["Cさん"]}).status_code == 404
+    assert u2.get(f"/groups/{pid}").status_code == 404
+    # 発行の上限値を超える指定は 422
+    assert a.post(f"/groups/{pid}/invites", json={"max_uses": 501}).status_code == 422
+    assert a.post(f"/groups/{pid}/invites", json={"ttl_hours": 24 * 31}).status_code == 422
+
+
+def func_now_minus_minute():
+    from datetime import UTC, datetime, timedelta
+
+    return datetime.now(UTC) - timedelta(minutes=1)
