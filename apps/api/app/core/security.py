@@ -40,19 +40,45 @@ def now() -> datetime:
     return datetime.now(UTC)
 
 
-def create_guest_session(db: Session, response: Response) -> Identity:
+def issue_session(db: Session, response: Response, ident: Identity, assurance_level: str) -> SessionRow:
+    """新しいセッションを発行して Cookie に入れる。
+
+    認証状態が変わるときは必ず新しいトークンにする(セッション固定の防止)。
+    """
     s = get_settings()
-    ident = Identity(kind="guest")
-    db.add(ident)
-    db.flush()
     token = new_token()
-    db.add(SessionRow(token_hash=hash_token(token), identity_id=ident.id, assurance_level="guest",
-                      expires_at=now() + timedelta(days=s.session_ttl_days)))
+    row = SessionRow(token_hash=hash_token(token), identity_id=ident.id, assurance_level=assurance_level,
+                     expires_at=now() + timedelta(days=s.session_ttl_days))
+    db.add(row)
     response.set_cookie(
         s.session_cookie_name, token, max_age=s.session_ttl_days * 86400, httponly=True,
         secure=s.cookie_secure, samesite="lax", path="/",
     )
+    return row
+
+
+def create_guest_session(db: Session, response: Response) -> Identity:
+    ident = Identity(kind="guest")
+    db.add(ident)
+    db.flush()
+    issue_session(db, response, ident, "guest")
     return ident
+
+
+def current_session(request: Request, db: Session) -> SessionRow | None:
+    """有効なセッション行(無効・期限切れ・失効なら None)。"""
+    token = request.cookies.get(get_settings().session_cookie_name)
+    if not token:
+        return None
+    row = db.execute(select(SessionRow).where(SessionRow.token_hash == hash_token(token))).scalar_one_or_none()
+    if row is None or row.revoked_at is not None or row.expires_at <= now():
+        return None
+    return row
+
+
+def clear_session_cookie(response: Response) -> None:
+    s = get_settings()
+    response.delete_cookie(s.session_cookie_name, path="/", secure=s.cookie_secure, httponly=True, samesite="lax")
 
 
 def check_csrf(request: Request) -> None:
@@ -72,13 +98,8 @@ def check_csrf(request: Request) -> None:
 
 
 def optional_identity(request: Request, db: Session = Depends(get_db)) -> Identity | None:
-    token = request.cookies.get(get_settings().session_cookie_name)
-    if not token:
-        return None
-    row = db.execute(
-        select(SessionRow).where(SessionRow.token_hash == hash_token(token))
-    ).scalar_one_or_none()
-    if row is None or row.revoked_at is not None or row.expires_at <= now():
+    row = current_session(request, db)
+    if row is None:
         return None
     ident = db.get(Identity, row.identity_id)
     if ident is None or ident.disabled_at is not None:

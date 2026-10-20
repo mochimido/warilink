@@ -5,6 +5,261 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/v1/auth/passkeys/register/options": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Register Options",
+        "operationId": "register_options_api_v1_auth_passkeys_register_options_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterOptionsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/register/verify": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Register Verify",
+        "operationId": "register_verify_api_v1_auth_passkeys_register_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/login/options": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Login Options",
+        "operationId": "login_options_api_v1_auth_passkeys_login_options_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionsOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/login/verify": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Login Verify",
+        "operationId": "login_verify_api_v1_auth_passkeys_login_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys": {
+      "get": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "List Passkeys",
+        "operationId": "list_passkeys_api_v1_auth_passkeys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Passkeys Api V1 Auth Passkeys Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/{passkey_id}": {
+      "delete": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Revoke Passkey",
+        "operationId": "revoke_passkey_api_v1_auth_passkeys__passkey_id__delete",
+        "parameters": [
+          {
+            "name": "passkey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Passkey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/revoke-others": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Revoke Other Sessions",
+        "description": "紛失した端末などに残ったログインを、この端末以外すべて失効させる。",
+        "operationId": "revoke_other_sessions_api_v1_auth_sessions_revoke_others_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/identity/guest": {
       "post": {
         "tags": [
@@ -2274,6 +2529,16 @@
           "kind": {
             "type": "string",
             "title": "Kind"
+          },
+          "assurance_level": {
+            "type": "string",
+            "title": "Assurance Level",
+            "default": "guest"
+          },
+          "passkey_count": {
+            "type": "integer",
+            "title": "Passkey Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -2513,6 +2778,32 @@
         "type": "object",
         "title": "JoinRequest"
       },
+      "LoginVerifyIn": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 10,
+            "title": "Flow Id"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential"
+          },
+          "merge_current_guest": {
+            "type": "boolean",
+            "title": "Merge Current Guest",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "credential"
+        ],
+        "title": "LoginVerifyIn"
+      },
       "MemberOut": {
         "properties": {
           "id": {
@@ -2674,6 +2965,74 @@
           "assumptions"
         ],
         "title": "OptimizationOut"
+      },
+      "OptionsOut": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "title": "Flow Id"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "options"
+        ],
+        "title": "OptionsOut"
+      },
+      "PasskeyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "device_type": {
+            "type": "string",
+            "enum": [
+              "single_device",
+              "multi_device"
+            ],
+            "title": "Device Type"
+          },
+          "backed_up": {
+            "type": "boolean",
+            "title": "Backed Up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname",
+          "created_at",
+          "last_used_at",
+          "device_type",
+          "backed_up"
+        ],
+        "title": "PasskeyOut"
       },
       "Payer": {
         "properties": {
@@ -2989,6 +3348,59 @@
         ],
         "title": "ReceiptOut"
       },
+      "RegisterOptionsIn": {
+        "properties": {
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "title": "RegisterOptionsIn"
+      },
+      "RegisterVerifyIn": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 10,
+            "title": "Flow Id"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "credential"
+        ],
+        "title": "RegisterVerifyIn"
+      },
       "RevisionOut": {
         "properties": {
           "version": {
@@ -3028,6 +3440,44 @@
           "created_at"
         ],
         "title": "RevisionOut"
+      },
+      "SessionStateOut": {
+        "properties": {
+          "identity_id": {
+            "type": "string",
+            "title": "Identity Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "assurance_level": {
+            "type": "string",
+            "title": "Assurance Level"
+          },
+          "passkey_count": {
+            "type": "integer",
+            "title": "Passkey Count"
+          },
+          "merged_groups": {
+            "type": "integer",
+            "title": "Merged Groups",
+            "default": 0
+          },
+          "unmerged_groups": {
+            "type": "integer",
+            "title": "Unmerged Groups",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "identity_id",
+          "kind",
+          "assurance_level",
+          "passkey_count"
+        ],
+        "title": "SessionStateOut"
       },
       "SettlementPlanOut": {
         "properties": {

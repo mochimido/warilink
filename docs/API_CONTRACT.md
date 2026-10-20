@@ -209,3 +209,22 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 2026-10-20 追加(P04): `IMAGE_TOO_MANY_PIXELS`(413、ヘッダーの寸法で判定)、`LENGTH_REQUIRED`(411、Content-Length のない本文)、
 `OCR_RATE_LIMITED`(429、利用者・グループの流量または読み取り待ちの数)、`OCR_BUSY`(503、全体の待ち行列が上限)。
 本文の大きさは multipart の解析前に `Content-Length` で判定する(上限 = `receipt_max_bytes` + 64KB)。
+
+
+### P07 追加(2026-10-20): Passkey(任意)
+
+| Method | Path | 説明 | 認可 |
+|---|---|---|---|
+| POST | `/auth/passkeys/register/options` | 登録の challenge(`flow_id` と WebAuthn の options)。`{nickname?}` | セッション(ゲスト可) |
+| POST | `/auth/passkeys/register/verify` | `{flow_id, credential, nickname?}`。成功するとゲストは同じ identity のまま `registered` に昇格し、セッションを作り直す | 登録を始めた本人・同じセッション |
+| POST | `/auth/passkeys/login/options` | 認証の challenge(端末に保存された Passkey から選ぶ) | 不要(CSRF ヘッダーは必須) |
+| POST | `/auth/passkeys/login/verify` | `{flow_id, credential, merge_current_guest}`。成功すると新しいセッションを発行し、この端末の以前のセッションは失効 | 認証を始めたセッション |
+| GET | `/auth/passkeys` | 自分の Passkey 一覧(公開鍵・クレデンシャル ID は返さない) | 本人 |
+| DELETE | `/auth/passkeys/{id}` | 失効。最後の 1 件は 409 `LAST_PASSKEY`。他人のものは 404 | 本人 |
+| POST | `/auth/logout` | ログアウト(204)。ゲストは 409 `GUEST_CANNOT_LOGOUT`(戻れなくなるため) | 本人 |
+| POST | `/auth/sessions/revoke-others` | この端末以外のセッションをすべて失効 | 本人 |
+
+- `GET /identity/me` に `assurance_level`(`guest` / `passkey`)と `passkey_count` を追加(既存項目は不変)。
+- エラー: `PASSKEY_CHALLENGE_INVALID`(400、期限切れ・使用済み・別の人/セッションの challenge)、
+  `PASSKEY_VERIFICATION_FAILED`(400、署名・Origin・RP ID・ユーザー検証・署名回数・未登録の Passkey。どれが原因かは返さない)、
+  `PASSKEY_ALREADY_REGISTERED`(409)。

@@ -4,6 +4,145 @@
  */
 
 export interface paths {
+    "/api/v1/auth/passkeys/register/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Options */
+        post: operations["register_options_api_v1_auth_passkeys_register_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/register/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Verify */
+        post: operations["register_verify_api_v1_auth_passkeys_register_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/login/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login Options */
+        post: operations["login_options_api_v1_auth_passkeys_login_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/login/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login Verify */
+        post: operations["login_verify_api_v1_auth_passkeys_login_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Passkeys */
+        get: operations["list_passkeys_api_v1_auth_passkeys_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/{passkey_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Passkey */
+        delete: operations["revoke_passkey_api_v1_auth_passkeys__passkey_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke Other Sessions
+         * @description 紛失した端末などに残ったログインを、この端末以外すべて失効させる。
+         */
+        post: operations["revoke_other_sessions_api_v1_auth_sessions_revoke_others_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/guest": {
         parameters: {
             query?: never;
@@ -771,6 +910,16 @@ export interface components {
             identity_id: string;
             /** Kind */
             kind: string;
+            /**
+             * Assurance Level
+             * @default guest
+             */
+            assurance_level: string;
+            /**
+             * Passkey Count
+             * @default 0
+             */
+            passkey_count: number;
         };
         /** InviteCreate */
         InviteCreate: {
@@ -842,6 +991,20 @@ export interface components {
             /** New Member Name */
             new_member_name?: string | null;
         };
+        /** LoginVerifyIn */
+        LoginVerifyIn: {
+            /** Flow Id */
+            flow_id: string;
+            /** Credential */
+            credential: {
+                [key: string]: unknown;
+            };
+            /**
+             * Merge Current Guest
+             * @default false
+             */
+            merge_current_guest: boolean;
+        };
         /** MemberOut */
         MemberOut: {
             /** Id */
@@ -891,6 +1054,33 @@ export interface components {
             /** Elapsed Ms */
             elapsed_ms: number;
             assumptions: components["schemas"]["AssumptionsOut"];
+        };
+        /** OptionsOut */
+        OptionsOut: {
+            /** Flow Id */
+            flow_id: string;
+            /** Options */
+            options: {
+                [key: string]: unknown;
+            };
+        };
+        /** PasskeyOut */
+        PasskeyOut: {
+            /** Id */
+            id: string;
+            /** Nickname */
+            nickname: string;
+            /** Created At */
+            created_at: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /**
+             * Device Type
+             * @enum {string}
+             */
+            device_type: "single_device" | "multi_device";
+            /** Backed Up */
+            backed_up: boolean;
         };
         /** Payer */
         Payer: {
@@ -999,6 +1189,22 @@ export interface components {
             } | null;
             quota: components["schemas"]["QuotaOut"];
         };
+        /** RegisterOptionsIn */
+        RegisterOptionsIn: {
+            /** Nickname */
+            nickname?: string | null;
+        };
+        /** RegisterVerifyIn */
+        RegisterVerifyIn: {
+            /** Flow Id */
+            flow_id: string;
+            /** Credential */
+            credential: {
+                [key: string]: unknown;
+            };
+            /** Nickname */
+            nickname?: string | null;
+        };
         /** RevisionOut */
         RevisionOut: {
             /** Version */
@@ -1017,6 +1223,27 @@ export interface components {
             changed_by_me: boolean;
             /** Created At */
             created_at: string;
+        };
+        /** SessionStateOut */
+        SessionStateOut: {
+            /** Identity Id */
+            identity_id: string;
+            /** Kind */
+            kind: string;
+            /** Assurance Level */
+            assurance_level: string;
+            /** Passkey Count */
+            passkey_count: number;
+            /**
+             * Merged Groups
+             * @default 0
+             */
+            merged_groups: number;
+            /**
+             * Unmerged Groups
+             * @default 0
+             */
+            unmerged_groups: number;
         };
         /** SettlementPlanOut */
         SettlementPlanOut: {
@@ -1151,6 +1378,214 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    register_options_api_v1_auth_passkeys_register_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterOptionsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_verify_api_v1_auth_passkeys_register_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_options_api_v1_auth_passkeys_login_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionsOut"];
+                };
+            };
+        };
+    };
+    login_verify_api_v1_auth_passkeys_login_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_passkeys_api_v1_auth_passkeys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyOut"][];
+                };
+            };
+        };
+    };
+    revoke_passkey_api_v1_auth_passkeys__passkey_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                passkey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revoke_other_sessions_api_v1_auth_sessions_revoke_others_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStateOut"];
+                };
+            };
+        };
+    };
     start_guest_api_v1_identity_guest_post: {
         parameters: {
             query?: never;

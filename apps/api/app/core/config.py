@@ -68,6 +68,17 @@ class Settings(BaseSettings):
     # 契約・法務確認まで本番では有効化できない
     feature_bank_provider: bool = False
 
+    # Passkey(WebAuthn)。RP ID は Web のホスト名(またはその親ドメイン)。Origin は allowed_origins を使う
+    webauthn_rp_id: str | None = None  # 未指定なら allowed_origins の最初のホスト名
+    webauthn_rp_name: str = "WariLink"
+    webauthn_challenge_ttl_seconds: int = 300
+
+    @property
+    def rp_id(self) -> str:
+        if self.webauthn_rp_id:
+            return self.webauthn_rp_id
+        return (urlsplit(self.allowed_origins[0]).hostname or "") if self.allowed_origins else ""
+
 
 def production_problems(s: "Settings") -> list[str]:
     """本番(environment=production)で拒否する設定の一覧。値そのもの(秘密)はメッセージに含めない。"""
@@ -90,6 +101,10 @@ def production_problems(s: "Settings") -> list[str]:
         out.append("WARILINK_DATABASE_URL に開発用の既定パスワードが使われています")
     if s.feature_bank_provider:
         out.append("銀行連携は契約・同意・法務確認まで本番で有効にできません(WARILINK_FEATURE_BANK_PROVIDER)")
+    hosts = {urlsplit(o).hostname for o in s.allowed_origins}
+    rp = s.rp_id
+    if rp in LOCAL_HOSTS or not rp or not all(h and (h == rp or h.endswith("." + rp)) for h in hosts):
+        out.append("WARILINK_WEBAUTHN_RP_ID を Web のホスト名(またはその親ドメイン)にしてください")
     if s.feature_ads or s.feature_billing:
         out.append("広告・課金は未実装のため本番で有効にできません(WARILINK_FEATURE_ADS / WARILINK_FEATURE_BILLING)")
     return out

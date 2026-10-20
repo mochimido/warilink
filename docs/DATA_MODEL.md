@@ -144,3 +144,17 @@
   `expense_revisions.spec/result` が正本。集計が必要になった時点で追加する。
 - `eval_datasets` / `eval_runs` / `model_promotions` は DB ではなく、評価 CLI の入出力ファイル(データセットのハッシュ・指標・
   `accepted/rejected` 判定)として実装した。同意データの管理(Phase 6)と合わせて DB 化する。
+
+
+## 8. Passkey(P07、2026-10-20)
+
+- `identities` に `webauthn_user_handle`(32 バイトの乱数、一意。個人情報を含まない)と `registered_at` を追加。
+  ゲストの昇格は同じ行の `kind` を `registered` にするだけで、`memberships`・支出・精算の参照は変わらない。
+- `passkey_credentials`: `credential_id`(一意)、公開鍵(COSE)、`sign_count`、`transports`、`aaguid`、`device_type`、`backed_up`、
+  `nickname`、`last_used_at`、`revoked_at`(論理削除)。秘密鍵はサーバーに存在しない。
+- `webauthn_challenges`: `flow_hash`(クライアントに渡す flow_id の SHA-256)、`purpose`、`challenge`、開始した `identity_id` / `session_id`、
+  `rp_id`、`expires_at`(既定 300 秒)、`used_at`(1 回だけ)。
+- `sessions.assurance_level` に `passkey` を使う(既存の `guest` はそのまま)。
+- ログイン時に「この端末のゲストのグループを移す」を選ぶと、ゲストの `memberships.identity_id` を登録済み identity に付け替える
+  (両方が同じグループにいる場合は移さない)。OCR の利用枠の台帳は移さない(Cookie の作り直しによる枠の増加を防ぐ)。
+- マイグレーション `20261021_7eb489713d2a_p07_passkeys.py` は追加のみ(既存データは変えない)。
