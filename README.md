@@ -18,6 +18,11 @@ open http://localhost:3000
 make down        # このプロジェクトのコンテナのみ停止(ボリュームは残す)
 ```
 
+## 本番設定について
+
+`infra/compose.yaml` は開発用です。`WARILINK_ENVIRONMENT=production` にすると、Cookie の Secure・https の許可オリジン・
+既定以外の DB パスワードなどがそろっていない限り API は起動しません。条件は `docs/SECURITY_PRIVACY.md` §2.1 を参照してください。
+
 ## ローカル開発
 
 ```bash

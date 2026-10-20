@@ -1,10 +1,22 @@
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ENVIRONMENTS = ("development", "test", "production")
+# 開発用の既定の DB 認証情報(compose・.env.example と同じ)。本番では使わせない
+DEV_DB_CREDENTIALS = ("warilink:warilink@", "warilink:warilink-dev-only@")
+LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1", "0.0.0.0")
+
+
+class UnsafeProductionConfig(ValueError):
+    """本番で危険な設定。起動を中止する(fail-closed)。"""
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="WARILINK_", env_file=".env", extra="ignore")
+    # 検証エラーに入力値(DB の URL など秘密を含みうる)を出さない
+    model_config = SettingsConfigDict(env_prefix="WARILINK_", env_file=".env", extra="ignore",
+                                      hide_input_in_errors=True)
 
     environment: str = "development"  # development | test | production
     database_url: str = "postgresql+psycopg://warilink:warilink@localhost:55432/warilink"
@@ -46,10 +58,47 @@ class Settings(BaseSettings):
     ocr_rec_model: str = "PP-OCRv6_medium_rec"
     ocr_low_confidence: float = 0.90  # これ未満の確信度の行は「要確認」と表示(暫定値・実測で調整)
 
-    # 契約・法務確認まで本番では有効化できない(Phase 5 で fail-closed を実装)
+    # 契約・法務確認まで本番では有効化できない
     feature_bank_provider: bool = False
+
+
+def production_problems(s: "Settings") -> list[str]:
+    """本番(environment=production)で拒否する設定の一覧。値そのもの(秘密)はメッセージに含めない。"""
+    out: list[str] = []
+    if not s.cookie_secure:
+        out.append("WARILINK_COOKIE_SECURE を true にしてください")
+    if not s.allowed_origins:
+        out.append("WARILINK_ALLOWED_ORIGINS に Web の https オリジンを指定してください")
+    for o in s.allowed_origins:
+        u = urlsplit(o)
+        if o == "*" or "*" in o:
+            out.append("WARILINK_ALLOWED_ORIGINS にワイルドカードは使えません")
+        elif u.scheme != "https" or not u.hostname:
+            out.append("WARILINK_ALLOWED_ORIGINS は https:// のオリジンだけにしてください")
+        elif u.hostname in LOCAL_HOSTS:
+            out.append("WARILINK_ALLOWED_ORIGINS に localhost は使えません")
+        elif u.path not in ("", "/") or u.query or u.fragment or u.username:
+            out.append("WARILINK_ALLOWED_ORIGINS はパスを含まないオリジン(https://ホスト[:ポート])にしてください")
+    if any(c in s.database_url for c in DEV_DB_CREDENTIALS):
+        out.append("WARILINK_DATABASE_URL に開発用の既定パスワードが使われています")
+    if s.feature_bank_provider:
+        out.append("銀行連携は契約・同意・法務確認まで本番で有効にできません(WARILINK_FEATURE_BANK_PROVIDER)")
+    if s.feature_ads or s.feature_billing:
+        out.append("広告・課金は未実装のため本番で有効にできません(WARILINK_FEATURE_ADS / WARILINK_FEATURE_BILLING)")
+    return out
+
+
+def ensure_safe(s: Settings) -> Settings:
+    """起動前の検証。本番で危険な設定なら例外で起動を中止する(fail-closed)。値はメッセージに含めない。"""
+    if s.environment not in ENVIRONMENTS:
+        raise UnsafeProductionConfig(f"WARILINK_ENVIRONMENT は {' / '.join(ENVIRONMENTS)} のいずれかにしてください")
+    if s.environment == "production":
+        problems = production_problems(s)
+        if problems:
+            raise UnsafeProductionConfig("本番の設定が安全ではないため起動を中止します: " + " / ".join(problems))
+    return s
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return ensure_safe(Settings())

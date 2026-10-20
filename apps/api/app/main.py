@@ -15,8 +15,11 @@ API_PREFIX = "/api/v1"
 
 def create_app() -> FastAPI:
     s = get_settings()
-    app = FastAPI(title="WariLink API", version="0.1.0", openapi_url=f"{API_PREFIX}/openapi.json",
-                  docs_url=f"{API_PREFIX}/docs" if s.environment != "production" else None)
+    # 本番の危険な設定は get_settings() の検証で起動前に拒否される(config.production_problems)
+    prod = s.environment == "production"
+    app = FastAPI(title="WariLink API", version="0.1.0",
+                  openapi_url=None if prod else f"{API_PREFIX}/openapi.json",
+                  docs_url=None if prod else f"{API_PREFIX}/docs", redoc_url=None if prod else "/redoc")
     app.add_middleware(
         CORSMiddleware, allow_origins=s.allowed_origins, allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],

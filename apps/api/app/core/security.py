@@ -58,8 +58,16 @@ def create_guest_session(db: Session, response: Response) -> Identity:
 def check_csrf(request: Request) -> None:
     if request.method in UNSAFE_METHODS and request.headers.get(CSRF_HEADER) != "1":
         raise ApiError(403, "CSRF_REJECTED", "不正なリクエストのため拒否しました。ページを再読み込みしてください")
+    if request.method not in UNSAFE_METHODS:
+        return
+    s = get_settings()
     origin = request.headers.get("origin")
-    if request.method in UNSAFE_METHODS and origin and origin not in get_settings().allowed_origins:
+    if origin is None:
+        # ブラウザは状態変更の fetch に Origin を付ける。本番では無い要求も拒否する(fail-closed)
+        if s.environment == "production":
+            raise ApiError(403, "CSRF_REJECTED", "送信元を確認できないため拒否しました。ページを再読み込みしてください")
+        return
+    if origin not in s.allowed_origins:
         raise ApiError(403, "CSRF_REJECTED", "許可されていない送信元からのリクエストです")
 
 

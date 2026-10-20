@@ -43,6 +43,27 @@
 - 1取引の二重マッチ防止。振込手数料差引、複数件合算、部分入金、他人による代理送金は人手確認対象。
 - 異議申立て・監査・確認取消を備える。不可逆に「支払完了」を確定しない。
 
+### 2.1 本番設定の fail-closed(2026-10-20 実装、P03)
+
+`WARILINK_ENVIRONMENT=production` のとき、API は次のいずれかに当たると**起動しない**(`app/core/config.py` の
+`ensure_safe` / `production_problems`。`get_settings()` の初回呼び出し=アプリ生成時に検査)。
+
+| 拒否する設定 | 理由 |
+|---|---|
+| `WARILINK_COOKIE_SECURE=false` | セッション Cookie が平文 HTTP で送られる |
+| `WARILINK_ALLOWED_ORIGINS` が空・`*`・http・localhost/127.0.0.1・パス付き | CORS/Origin 検査が無効または開発用のまま |
+| `WARILINK_DATABASE_URL` が開発用の既定パスワード(`warilink` / `warilink-dev-only`) | 既定の認証情報 |
+| `WARILINK_FEATURE_BANK_PROVIDER=true` | 契約・同意・法務確認前 |
+| `WARILINK_FEATURE_ADS=true` / `WARILINK_FEATURE_BILLING=true` | 未実装 |
+| `WARILINK_ENVIRONMENT` が development/test/production 以外 | 綴り違いで開発設定のまま動くのを防ぐ |
+
+- エラーメッセージは設定名だけを示し、値(DB のパスワード等)は出さない。pydantic の検証エラーも入力値を表示しない設定にした。
+- 本番では状態変更リクエスト(POST/PUT/PATCH/DELETE)に `X-WariLink-CSRF: 1` と、許可リストにある `Origin` の**両方**を要求する
+  (Origin なしも拒否)。開発・テストでは Origin なしを許す(既存のテストクライアント・ツールとの互換)。
+- 本番では `/api/v1/docs`・`/api/v1/openapi.json`・`/redoc` を公開しない。
+- Cookie 名(`wl_session`)・HttpOnly・SameSite=Lax は変更していない。Web は Next.js の rewrite で API を同一オリジンに見せるため、
+  `WARILINK_ALLOWED_ORIGINS` には Web の https オリジンを 1 つ指定する。
+
 ## 3. 個人情報と同意
 
 - サービス提供（必須用途）と、OCR改善、パーソナライズ広告、統計・市場分析（それぞれ任意）は別に説明。
