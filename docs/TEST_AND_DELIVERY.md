@@ -159,3 +159,23 @@
 | 復元の拒否(共有 DB 名・既存 DB・空でない画像ディレクトリ・改ざんしたダンプ/画像) | `warilink_backup.py restore` を各条件で実行 | 手動 |
 
 本番の保管先・暗号化・切り戻しは未検証。
+
+
+## CI とリリースゲート(2026-10-20、P06)
+
+`.github/workflows/ci.yml`(**GitHub 上では未実行**。push 権限がないため後日の PR で確認する)
+
+| ジョブ | 内容 | DB |
+|---|---|---|
+| `api` | ruff・mypy・pytest(実モデルのテストは除外) | ジョブ専用のサービスコンテナ `warilink_test` |
+| `web` | 型チェック・本番ビルド | なし |
+| `e2e`(重い。`api`・`web` の成功後) | 本物の PaddleOCR の結合テスト(`pytest -m ocr`)と Playwright E2E(モバイル・デスクトップ、実 API・実 DB・実ワーカー) | ジョブ専用のサービスコンテナ `warilink_e2e` |
+
+- 起動条件: `main` への push、すべての PR、手動。同じ PR の古い実行は取り消す(push と PR の二重実行をやめた。PR では毎回実行される)。
+- 失敗を隠さない: E2E の `retries: 0`、CI では `test.only` を禁止(`forbidOnly`)。失敗時は Playwright のレポートを 7 日保存。
+- **破壊的なテストの保護(fail-closed)**:
+  - `tests/api/conftest.py` は、接続先がローカル(localhost / 127.0.0.1 / ::1)の `warilink_test` / `warilink_test_*` でなければ、
+    downgrade・TRUNCATE の前に中止する。接続後にも `current_database()` を確かめる。
+  - `playwright.config.ts` は、`E2E_DATABASE_URL` がローカルの `warilink_e2e` / `warilink_e2e_*` でなければ起動しない。
+  - 残るリスク: 別のローカル PostgreSQL(例: 他プロジェクトのコンテナ)に偶然 `warilink_test` という DB があると防げない。
+- linux/amd64 での PaddleOCR の動作は CI の初回実行で確かめる(ローカルでは arm64 のみ確認済み)。

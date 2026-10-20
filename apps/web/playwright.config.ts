@@ -8,11 +8,21 @@ const RECEIPTS_DIR = "../../var/e2e-receipts";
 const DB_URL =
   process.env.E2E_DATABASE_URL ?? "postgresql+psycopg://warilink:warilink-dev-only@localhost:55432/warilink_e2e";
 
+// E2E は DB を書き換える(マイグレーション・データ作成)。ローカルの warilink_e2e(_*) 以外なら起動しない(fail-closed)
+{
+  const m = DB_URL.match(/^postgresql\+psycopg:\/\/[^@]+@([^:/]+)(?::\d+)?\/([^?]+)/);
+  if (!m || !["localhost", "127.0.0.1"].includes(m[1]) || !/^warilink_e2e(_[a-z0-9_]+)?$/.test(m[2])) {
+    throw new Error(`E2E は使い捨て DB(ローカルの warilink_e2e / warilink_e2e_*)でだけ実行できます: ${m ? `${m[1]}/${m[2]}` : "形式不明"}`);
+  }
+}
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 120_000,
   fullyParallel: false,
-  reporter: [["list"]],
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
+  forbidOnly: !!process.env.CI,
+  retries: 0, // 失敗を再試行で隠さない
   use: { baseURL: `http://localhost:${WEB_PORT}`, trace: "retain-on-failure" },
   projects: [
     { name: "mobile", use: { ...devices["Pixel 7"] } },

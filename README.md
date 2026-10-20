@@ -18,6 +18,11 @@ open http://localhost:3000
 make down        # このプロジェクトのコンテナのみ停止(ボリュームは残す)
 ```
 
+## テストの安全装置
+
+API テスト(`make test`)と E2E(`make e2e`)は DB を作り直します。接続先がローカルの `warilink_test*` / `warilink_e2e*`
+でなければ実行前に中止します。CI の構成は `docs/TEST_AND_DELIVERY.md` を参照してください。
+
 ## 運用ジョブ
 
 - 期限切れのレシート画像の削除と整合性検査: `scripts/warilink_purge_job.sh`(自動では登録しない。`infra/ops/README.md`)
