@@ -1564,6 +1564,16 @@
             "type": "integer",
             "title": "Settled In Minor"
           },
+          "reported_unconfirmed_out_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Out Minor",
+            "default": 0
+          },
+          "reported_unconfirmed_in_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed In Minor",
+            "default": 0
+          },
           "net_minor": {
             "type": "integer",
             "title": "Net Minor"
@@ -1671,6 +1681,9 @@
             },
             "type": "array",
             "title": "Transfers"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/SettlementProgressOut"
           }
         },
         "type": "object",
@@ -1683,7 +1696,8 @@
           "created_at",
           "balances",
           "optimization",
-          "transfers"
+          "transfers",
+          "progress"
         ],
         "title": "BatchOut"
       },
@@ -3050,6 +3064,9 @@
             },
             "type": "array",
             "title": "Locked Transfers"
+          },
+          "locked_progress": {
+            "$ref": "#/components/schemas/SettlementProgressOut"
           }
         },
         "type": "object",
@@ -3060,9 +3077,49 @@
           "balance_sum_minor",
           "transfers",
           "optimization",
-          "locked_transfers"
+          "locked_transfers",
+          "locked_progress"
         ],
         "title": "SettlementPlanOut"
+      },
+      "SettlementProgressOut": {
+        "properties": {
+          "unpaid_count": {
+            "type": "integer",
+            "title": "Unpaid Count"
+          },
+          "unpaid_minor": {
+            "type": "integer",
+            "title": "Unpaid Minor"
+          },
+          "reported_unconfirmed_count": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Count"
+          },
+          "reported_unconfirmed_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Minor"
+          },
+          "recipient_confirmed_count": {
+            "type": "integer",
+            "title": "Recipient Confirmed Count"
+          },
+          "recipient_confirmed_minor": {
+            "type": "integer",
+            "title": "Recipient Confirmed Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unpaid_count",
+          "unpaid_minor",
+          "reported_unconfirmed_count",
+          "reported_unconfirmed_minor",
+          "recipient_confirmed_count",
+          "recipient_confirmed_minor"
+        ],
+        "title": "SettlementProgressOut",
+        "description": "送金の進み具合。申告済み(未確認)と受取確認済みを別々に数える。"
       },
       "SplitIn": {
         "properties": {
@@ -3144,6 +3201,14 @@
             "type": "integer",
             "title": "Version"
           },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label"
+          },
+          "is_recipient_confirmed": {
+            "type": "boolean",
+            "title": "Is Recipient Confirmed"
+          },
           "group_public_id": {
             "type": "string",
             "title": "Group Public Id"
@@ -3179,6 +3244,8 @@
           "currency",
           "status",
           "version",
+          "status_label",
+          "is_recipient_confirmed",
           "group_public_id",
           "from_name",
           "to_name",
@@ -3226,6 +3293,14 @@
           "version": {
             "type": "integer",
             "title": "Version"
+          },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label"
+          },
+          "is_recipient_confirmed": {
+            "type": "boolean",
+            "title": "Is Recipient Confirmed"
           }
         },
         "type": "object",
@@ -3237,7 +3312,9 @@
           "amount_minor",
           "currency",
           "status",
-          "version"
+          "version",
+          "status_label",
+          "is_recipient_confirmed"
         ],
         "title": "TransferOut"
       },

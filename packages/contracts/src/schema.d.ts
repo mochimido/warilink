@@ -530,6 +530,16 @@ export interface components {
             settled_out_minor: number;
             /** Settled In Minor */
             settled_in_minor: number;
+            /**
+             * Reported Unconfirmed Out Minor
+             * @default 0
+             */
+            reported_unconfirmed_out_minor: number;
+            /**
+             * Reported Unconfirmed In Minor
+             * @default 0
+             */
+            reported_unconfirmed_in_minor: number;
             /** Net Minor */
             net_minor: number;
         };
@@ -573,6 +583,7 @@ export interface components {
             optimization: components["schemas"]["OptimizationOut"];
             /** Transfers */
             transfers: components["schemas"]["TransferOut"][];
+            progress: components["schemas"]["SettlementProgressOut"];
         };
         /** Body_upload_receipt_api_v1_groups__public_id__receipts_post */
         Body_upload_receipt_api_v1_groups__public_id__receipts_post: {
@@ -1016,6 +1027,25 @@ export interface components {
             optimization: components["schemas"]["OptimizationOut"];
             /** Locked Transfers */
             locked_transfers: components["schemas"]["TransferOut"][];
+            locked_progress: components["schemas"]["SettlementProgressOut"];
+        };
+        /**
+         * SettlementProgressOut
+         * @description 送金の進み具合。申告済み(未確認)と受取確認済みを別々に数える。
+         */
+        SettlementProgressOut: {
+            /** Unpaid Count */
+            unpaid_count: number;
+            /** Unpaid Minor */
+            unpaid_minor: number;
+            /** Reported Unconfirmed Count */
+            reported_unconfirmed_count: number;
+            /** Reported Unconfirmed Minor */
+            reported_unconfirmed_minor: number;
+            /** Recipient Confirmed Count */
+            recipient_confirmed_count: number;
+            /** Recipient Confirmed Minor */
+            recipient_confirmed_minor: number;
         };
         /** SplitIn */
         SplitIn: {
@@ -1049,6 +1079,10 @@ export interface components {
             status: "unpaid" | "reported_paid" | "recipient_confirmed" | "superseded";
             /** Version */
             version: number;
+            /** Status Label */
+            status_label: string;
+            /** Is Recipient Confirmed */
+            is_recipient_confirmed: boolean;
             /** Group Public Id */
             group_public_id: string;
             /** From Name */
@@ -1084,6 +1118,10 @@ export interface components {
             status: "unpaid" | "reported_paid" | "recipient_confirmed" | "superseded";
             /** Version */
             version: number;
+            /** Status Label */
+            status_label: string;
+            /** Is Recipient Confirmed */
+            is_recipient_confirmed: boolean;
         };
         /** ValidationError */
         ValidationError: {

@@ -49,13 +49,23 @@ test("登録なしで開始→4人→支出→精算確定→コピー→送金�
     await expect(bRow.getByRole("button", { name: "コピーしました" })).toBeVisible();
   }
   await bRow.getByRole("button", { name: "送金したと申告" }).click();
-  await expect(bRow).toContainText("送金申告済み(未確認)");
+  await expect(bRow).toContainText("送金申告済み(受取人は未確認)");
+  // 申告だけでは「確認済み」と表示しない
+  await expect(bRow).not.toContainText("受取人が確認済み");
+  const bProgress = b.getByRole("list", { name: "送金の進み具合" });
+  await expect(bProgress).toContainText("受取確認済み 0件");
+  await expect(bProgress).toContainText("送金申告済み・受取確認待ち 1件");
+  await expect(b.getByText("着金を確かめたものではありません", { exact: false })).toBeVisible();
 
   // A: 受取人として手動確認
   await a.reload();
   const aRow = a.getByRole("list", { name: "確定した精算" }).locator("li.transfer").filter({ hasText: "Bさん → Aさん" });
+  await expect(aRow).toContainText("送金申告済み(受取人は未確認)");
   await aRow.getByRole("button", { name: "受け取りを確認" }).click();
   await expect(aRow).toContainText("受取人が確認済み");
+  const aProgress = a.getByRole("list", { name: "送金の進み具合" });
+  await expect(aProgress).toContainText("受取確認済み 1件");
+  await expect(aProgress).toContainText("送金申告済み・受取確認待ち 0件");
 
   // 送金の実行を示唆する文言を出していない
   await expect(a.getByText("このアプリは送金を実行しません").first()).toBeVisible();

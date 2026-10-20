@@ -145,6 +145,10 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 | POST | `/settlements/{transfer_id}/report-paid` | 送金申告 | 支払者のみ |
 | POST | `/settlements/{transfer_id}/confirm-received` | 受取の手動確認 | 受取人のみ |
 
+送金(`TransferOut`)には `status_label`(日本語の表示名)と `is_recipient_confirmed` を付ける。`reported_paid` は
+「送金申告済み(受取人は未確認)」で、確認済みとは表示しない。確定バッチの `progress`、プレビューの `locked_progress`、
+残高行の `reported_unconfirmed_out_minor` / `reported_unconfirmed_in_minor` は 2026-10-20 に追加(既存項目は不変。詳細は SETTLEMENT_ENGINE.md)。
+
 精算レスポンスの `optimization`:
 
 ```json

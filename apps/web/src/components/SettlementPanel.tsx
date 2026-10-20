@@ -2,10 +2,28 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, errorMessage, type Batch, type Group, type SettlementPlan, type TransferRow } from "@/lib/api";
-import { formatYen, STATUS_LABEL } from "@/lib/format";
+import { formatYen } from "@/lib/format";
 import { memberNames } from "@/lib/group-context";
 
 const STEPS = ["unpaid", "reported_paid", "recipient_confirmed"] as const;
+
+function ProgressSummary({ p }: { p: Batch["progress"] }) {
+  return (
+    <ul className="list" aria-label="送金の進み具合">
+      <li>
+        受取確認済み {p.recipient_confirmed_count}件({formatYen(p.recipient_confirmed_minor)})
+      </li>
+      <li>
+        <span className={p.reported_unconfirmed_count > 0 ? "badge warn" : ""}>
+          送金申告済み・受取確認待ち {p.reported_unconfirmed_count}件({formatYen(p.reported_unconfirmed_minor)})
+        </span>
+      </li>
+      <li>
+        未払い {p.unpaid_count}件({formatYen(p.unpaid_minor)})
+      </li>
+    </ul>
+  );
+}
 
 function StatusTrack({ status }: { status: TransferRow["status"] }) {
   const at = STEPS.indexOf(status as (typeof STEPS)[number]);
@@ -119,6 +137,12 @@ export function SettlementPanel({ group }: { group: Group }) {
           </>
         )}
 
+        {batch && !batch.is_stale && <ProgressSummary p={batch.progress} />}
+        {batch && !batch.is_stale && batch.progress.reported_unconfirmed_count > 0 && (
+          <p className="muted">
+            「受取確認待ち」は支払う人の申告だけで、受け取る人はまだ確認していません。精算案を計算し直すときは支払い済みとして扱いますが、着金を確かめたものではありません。
+          </p>
+        )}
         {batch && !batch.is_stale && (
           <ul className="list" aria-label="確定した精算">
             {batch.transfers
@@ -129,7 +153,7 @@ export function SettlementPanel({ group }: { group: Group }) {
                     {names[t.from_member_id]} → {names[t.to_member_id]}{" "}
                     <span className="amount">{formatYen(t.amount_minor)}</span>
                     <br />
-                    <span className="muted">{STATUS_LABEL[t.status]}</span>
+                    <span className={t.status === "reported_paid" ? "badge warn" : "muted"}>{t.status_label}</span>
                     <StatusTrack status={t.status} />
                   </span>
                   <span className="row" style={{ flex: "0 0 auto" }}>
@@ -171,7 +195,9 @@ export function SettlementPanel({ group }: { group: Group }) {
               <li>通貨は{a.currency}のみ、1円単位の整数で計算しています</li>
               <li>振込手数料は考慮していません</li>
               <li>1回あたりの送金上限は{a.per_transfer_limit_minor === null ? "考慮していません" : formatYen(a.per_transfer_limit_minor)}</li>
-              <li>送金申告済み・受取確認済みの送金は変更せず、残りだけを計算し直します</li>
+              <li>
+                送金申告済み(受取確認待ちを含む)・受取確認済みの送金は変更せず、残りだけを計算し直します
+              </li>
               {opt && !opt.is_exact_minimum && opt.optimized_transfer_count > 0 && (
                 <li>人数が多いため、送金回数が最小であることは保証していません</li>
               )}

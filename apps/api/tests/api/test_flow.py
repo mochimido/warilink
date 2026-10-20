@@ -244,3 +244,62 @@ def test_invite_claim_race_and_expiry(user_factory):
     # 招待URL発行はオーナーのみ
     joined = next(u for u, r in results if r.status_code == 200)
     assert joined.post(f"/groups/{pid}/invites", json={}).status_code == 403
+
+
+def test_reported_and_confirmed_are_distinct(user_factory):
+    """送金申告(支払者の自己申告)と受取確認(受取人の手動確認)を API 上で取り違えない。"""
+    a, b, c = user_factory(), user_factory(), user_factory()
+    g, ids = make_group(a)
+    pid = g["public_id"]
+    join_as(b, a, pid, "Bさん")
+    join_as(c, a, pid, "Cさん")
+    # A が 3000 円を A・B・C で割る → B→A 1000, C→A 1000
+    abc = [ids["Aさん"], ids["Bさん"], ids["Cさん"]]
+    a.post(f"/groups/{pid}/expenses", json=equal_expense(ids["Aさん"], 3000, abc))
+    v = a.get(f"/groups/{pid}").json()["ledger_version"]
+    batch = a.post(f"/groups/{pid}/settlement-batches", json={"expected_ledger_version": v}).json()
+    assert batch["progress"] == {"unpaid_count": 2, "unpaid_minor": 2000, "reported_unconfirmed_count": 0,
+                                 "reported_unconfirmed_minor": 0, "recipient_confirmed_count": 0,
+                                 "recipient_confirmed_minor": 0}
+    t_b = next(t for t in batch["transfers"] if t["from_member_id"] == ids["Bさん"])
+    t_c = next(t for t in batch["transfers"] if t["from_member_id"] == ids["Cさん"])
+    assert t_b["to_member_id"] == ids["Aさん"] and not t_b["is_recipient_confirmed"]
+
+    # 受取人は申告できない / 支払者は受取確認できない / 他の当事者でない人は存在も見えない
+    assert a.post(f"/settlements/{t_b['id']}/report-paid").status_code == 403
+    assert c.post(f"/settlements/{t_b['id']}/report-paid").status_code == 404
+    assert c.post(f"/settlements/{t_b['id']}/confirm-received").status_code == 404
+    assert a.post(f"/settlements/{uuid.uuid4()}/confirm-received").status_code == 404
+
+    r = b.post(f"/settlements/{t_b['id']}/report-paid").json()
+    assert r["status"] == "reported_paid" and r["is_recipient_confirmed"] is False
+    assert "未確認" in r["status_label"]
+    assert b.post(f"/settlements/{t_b['id']}/confirm-received").status_code == 403
+
+    # 残高: 申告済みは再計算上は支払い済み(ロック)だが、未確認額として別に示す
+    rows = {r["member_id"]: r for r in a.get(f"/groups/{pid}/balances").json()["balances"]}
+    assert rows[ids["Bさん"]]["settled_out_minor"] == 1000
+    assert rows[ids["Bさん"]]["reported_unconfirmed_out_minor"] == 1000
+    assert rows[ids["Aさん"]]["reported_unconfirmed_in_minor"] == 1000
+    assert sum(r["net_minor"] for r in rows.values()) == 0
+    prev = a.post(f"/groups/{pid}/settlements/preview").json()
+    assert prev["locked_progress"]["reported_unconfirmed_count"] == 1
+    assert prev["locked_progress"]["recipient_confirmed_count"] == 0
+    cur = a.get(f"/groups/{pid}/settlement-batches/current").json()
+    assert cur["progress"]["reported_unconfirmed_minor"] == 1000 and cur["progress"]["unpaid_minor"] == 1000
+
+    # 受取確認後: 未確認額は 0、確認済みとして数える。申告し直しても確認済みから戻らない
+    r = a.post(f"/settlements/{t_b['id']}/confirm-received").json()
+    assert r["status"] == "recipient_confirmed" and r["is_recipient_confirmed"] is True
+    assert b.post(f"/settlements/{t_b['id']}/report-paid").json()["status"] == "recipient_confirmed"
+    assert a.post(f"/settlements/{t_b['id']}/confirm-received").json()["version"] == r["version"]  # 冪等
+    rows = {r["member_id"]: r for r in a.get(f"/groups/{pid}/balances").json()["balances"]}
+    assert rows[ids["Bさん"]]["reported_unconfirmed_out_minor"] == 0
+    assert rows[ids["Bさん"]]["settled_out_minor"] == 1000
+    cur = a.get(f"/groups/{pid}/settlement-batches/current").json()
+    assert cur["progress"]["recipient_confirmed_count"] == 1 and cur["progress"]["reported_unconfirmed_count"] == 0
+
+    # 受取人は申告を待たずに受け取りを確認できる(申告は必須ではない)
+    r = a.post(f"/settlements/{t_c['id']}/confirm-received").json()
+    assert r["status"] == "recipient_confirmed"
+    assert c.post(f"/settlements/{t_c['id']}/report-paid").json()["status"] == "recipient_confirmed"
