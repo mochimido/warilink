@@ -3,7 +3,8 @@
   python -m app.ocr.cli recognize 画像 [--json]          1枚を読み取って下書きを表示(DB 不要)
   python -m app.ocr.cli synth --out DIR --count 50       合成レシートと正解ラベルを生成
   python -m app.ocr.cli evaluate DIR [--baseline F]      評価(verified/synthetic ラベルのみ)
-  python -m app.ocr.cli purge-images [--dry-run]         保存期間を過ぎた画像を削除
+  python -m app.ocr.cli purge-images [--dry-run] [--json]  保存期間を過ぎた画像を削除(失敗があれば終了コード 1)
+  python -m app.ocr.cli check-storage                    DB と画像ファイルの不一致を検査(不一致は終了コード 2)
   python -m app.ocr.cli stats                            読み取りの訂正件数・確認時間の集計(DB)
 """
 
@@ -12,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 
@@ -89,27 +89,34 @@ def cmd_evaluate(a: argparse.Namespace) -> int:
 
 
 def cmd_purge(a: argparse.Namespace) -> int:
-    from sqlalchemy import select  # noqa: PLC0415
+    """終了コード: 0 = 成功、1 = 削除できなかった画像がある(監視で通知する。次回の実行で再試行)。"""
     from sqlalchemy.orm import Session  # noqa: PLC0415
 
-    from app.core.config import get_settings  # noqa: PLC0415
     from app.core.db import get_engine  # noqa: PLC0415
-    from app.models.tables import Receipt  # noqa: PLC0415
-    from app.ocr.images import delete_image  # noqa: PLC0415
+    from app.ocr.images import purge_expired  # noqa: PLC0415
 
-    cutoff = datetime.now(UTC) - timedelta(days=get_settings().receipt_image_retention_days)
     with Session(get_engine()) as db:
-        rows = db.execute(select(Receipt).where(Receipt.created_at < cutoff, Receipt.image_deleted_at.is_(None))
-                          .with_for_update(skip_locked=True)).scalars().all()
-        for r in rows:
-            if not a.dry_run:
-                delete_image(r.storage_key)
-                r.image_deleted_at = datetime.now(UTC)
-        if not a.dry_run:
-            db.commit()
-    days = get_settings().receipt_image_retention_days
-    print(f"{'削除対象' if a.dry_run else '削除'}: {len(rows)} 枚(保存期間 {days} 日)")
-    return 0
+        res = purge_expired(db, dry_run=a.dry_run)
+    if a.json:
+        print(json.dumps(res.to_json(), ensure_ascii=False))
+    else:
+        verb = "削除対象" if a.dry_run else "削除"
+        print(f"{verb}: {res.candidates if a.dry_run else res.deleted} 枚(保存期間 {res.retention_days} 日)"
+              + (f" / 失敗 {len(res.failed)} 枚" if res.failed else ""))
+    return 1 if res.failed else 0
+
+
+def cmd_check_storage(a: argparse.Namespace) -> int:
+    """終了コード: 0 = DB とファイルが一致、2 = 不一致あり(読み取り専用。何も変更しない)。"""
+    from sqlalchemy.orm import Session  # noqa: PLC0415
+
+    from app.core.db import get_engine  # noqa: PLC0415
+    from app.ocr.images import check_storage  # noqa: PLC0415
+
+    with Session(get_engine()) as db:
+        rep = check_storage(db)
+    print(json.dumps(rep.to_json(), ensure_ascii=False))
+    return 0 if rep.consistent else 2
 
 
 def cmd_stats(a: argparse.Namespace) -> int:
@@ -156,10 +163,12 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--reuse-tokens", action="store_true", help="保存済みの認識結果でパーサーだけを評価")
     g = sub.add_parser("purge-images")
     g.add_argument("--dry-run", action="store_true")
+    g.add_argument("--json", action="store_true")
+    sub.add_parser("check-storage")
     sub.add_parser("stats")
     a = p.parse_args(argv)
     return {"recognize": cmd_recognize, "synth": cmd_synth, "evaluate": cmd_evaluate, "purge-images": cmd_purge,
-            "stats": cmd_stats}[a.cmd](a)
+            "check-storage": cmd_check_storage, "stats": cmd_stats}[a.cmd](a)
 
 
 if __name__ == "__main__":

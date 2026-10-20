@@ -27,7 +27,7 @@
 | メタデータ | EXIF の向きを反映したうえで、EXIF・ICC を付けずに JPEG で保存し直す(位置情報を保存しない) |
 | 重複 | 元画像の SHA-256 が同じグループ内で一致すれば既存のレシートを返す(枠を消費しない)。同時アップロードは一意インデックスで判定 |
 | 保存 | `receipt_storage_dir/{receipt_id}.jpg`(DB には置かない)。一時ファイル→rename で書き込む |
-| 保存期間 | `receipt_image_retention_days`(既定 30 日)。`python -m app.ocr.cli purge-images` で画像だけ削除(下書き・訂正記録は残る) |
+| 保存期間 | `receipt_image_retention_days`(既定 30 日)。`python -m app.ocr.cli purge-images` で画像を削除し、同時に `ocr_runs.tokens`(生の文字)と下書きの `lines`(支払・会員番号などの行を含みうる)も消す。商品・調整・合計と訂正記録は残る。定期実行は `scripts/warilink_purge_job.sh`(P05、`infra/ops/README.md`) |
 | 閲覧 | `GET .../receipts/{id}/image` はグループのメンバーのみ(他は 404)、`Cache-Control: private, no-store` |
 
 ### 2.1 確認の順序と濫用対策(2026-10-20、P04)

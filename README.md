@@ -18,6 +18,11 @@ open http://localhost:3000
 make down        # このプロジェクトのコンテナのみ停止(ボリュームは残す)
 ```
 
+## 運用ジョブ
+
+- 期限切れのレシート画像の削除と整合性検査: `scripts/warilink_purge_job.sh`(自動では登録しない。`infra/ops/README.md`)
+- バックアップ・復元訓練: `.venv/bin/python scripts/warilink_backup.py drill --workdir <空のディレクトリ>`
+
 ## 本番設定について
 
 `infra/compose.yaml` は開発用です。`WARILINK_ENVIRONMENT=production` にすると、Cookie の Secure・https の許可オリジン・

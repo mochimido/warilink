@@ -145,3 +145,17 @@
 | E2E: 本物のワーカーで合成レシートを読み取り→下書きの値を確認→負担者を選んで登録→合計一致→枠が減る / 不良画像は失敗表示・返還・手入力へ / 確認画面のアクセシビリティ | `apps/web/e2e/ocr.spec.ts` |
 
 合成データの結果は実レシートの精度を表さない(`docs/OCR_PIPELINE.md §8`)。linux/amd64 での動作は未確認。
+
+
+## 運用ジョブの検証(2026-10-20、P05)
+
+| 対象 | テスト・手順 | 実行環境 |
+|---|---|---|
+| 期限切れ画像の削除(dry-run・期限内の保護・二度実行・生の文字の削除・410) | `tests/api/test_receipts.py::test_purge_dry_run_retention_idempotent_and_scrubs_raw_text` | 使い捨て DB `warilink_test` |
+| 一部失敗の再試行・終了コード 1 | `test_purge_partial_failure_is_retried_and_reported` | 同上 |
+| DB と画像の不一致検出(終了コード 2) | `test_check_storage_detects_missing_and_orphan_files` | 同上 |
+| 失敗時の通知(モック) | `WARILINK_ALERT_CMD="cat >> file" scripts/warilink_purge_job.sh` を到達できない DB で実行 | 手動 |
+| バックアップ→復元→検証→片付け | `.venv/bin/python scripts/warilink_backup.py drill --workdir 空のディレクトリ` | `warilink_restore_*` の使い捨て DB(作成して最後に削除) |
+| 復元の拒否(共有 DB 名・既存 DB・空でない画像ディレクトリ・改ざんしたダンプ/画像) | `warilink_backup.py restore` を各条件で実行 | 手動 |
+
+本番の保管先・暗号化・切り戻しは未検証。

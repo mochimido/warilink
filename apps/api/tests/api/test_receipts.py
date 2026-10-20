@@ -454,3 +454,94 @@ def test_failure_after_saving_image_leaves_no_file_or_quota(user_factory, worker
         upload(a, g["public_id"], png())
     assert counts(sm) == (0, 0)
     assert [p for p in storage.iterdir() if p.is_file()] == []
+
+
+# ---------------------------------------------------------------- P05: 保存期間を過ぎた画像の削除
+
+
+def age_receipts(sm, days: int, ids: list[str] | None = None):
+    with sm() as db:
+        q = update(Receipt).values(created_at=datetime.now(UTC) - timedelta(days=days))
+        if ids is not None:
+            q = q.where(Receipt.id.in_([uuid.UUID(i) for i in ids]))
+        db.execute(q)
+        db.commit()
+
+
+def test_purge_dry_run_retention_idempotent_and_scrubs_raw_text(user_factory, worker_online, sm, storage):
+    from app.ocr import images
+    from app.ocr.cli import main as cli
+
+    a = User()
+    g, _ = make_group(a)
+    pid = g["public_id"]
+    old = upload(a, pid, png(10)).json()["id"]
+    new = upload(a, pid, png(20)).json()["id"]
+    assert process_one(sm, FixedAdapter(), "w1") and process_one(sm, FixedAdapter(), "w1")
+    age_receipts(sm, 31, [old])
+    assert len(list(storage.glob("*.jpg"))) == 2
+
+    with sm() as db:
+        r = images.purge_expired(db, dry_run=True)
+    assert (r.candidates, r.deleted) == (1, 0) and len(list(storage.glob("*.jpg"))) == 2
+
+    assert cli(["purge-images", "--json"]) == 0
+    assert not (storage / f"{old}.jpg").exists() and (storage / f"{new}.jpg").exists()  # 期限内は残る
+    with sm() as db:
+        rows = {str(x.id): x for x in db.execute(select(Receipt)).scalars()}
+        assert rows[old].image_deleted_at is not None and rows[new].image_deleted_at is None
+        runs = {str(x.receipt_id): x for x in db.execute(select(OcrRun)).scalars()}
+        assert runs[old].tokens is None and "lines" not in runs[old].draft  # 生の文字も消す
+        assert runs[old].draft["items"]  # 構造(商品)は残す
+        assert runs[new].tokens and "lines" in runs[new].draft
+    assert a.get(f"/groups/{pid}/receipts/{old}/image").status_code == 410
+    # 二度目は対象なし(冪等)
+    with sm() as db:
+        assert images.purge_expired(db, dry_run=False).candidates == 0
+    assert cli(["check-storage"]) == 0
+
+
+def test_purge_partial_failure_is_retried_and_reported(user_factory, worker_online, sm, storage, monkeypatch):
+    from app.ocr import images
+    from app.ocr.cli import main as cli
+
+    a = User()
+    g, _ = make_group(a)
+    pid = g["public_id"]
+    ids = [upload(a, pid, png(c)).json()["id"] for c in (10, 20, 30)]
+    age_receipts(sm, 40)
+    (storage / f"{ids[2]}.jpg").unlink()  # 既にファイルが無い行も削除済みとして記録できる
+    real = images.delete_image
+
+    def flaky(key):
+        if key.startswith(ids[0]):
+            raise PermissionError("denied")
+        real(key)
+
+    monkeypatch.setattr(images, "delete_image", flaky)
+    assert cli(["purge-images", "--json"]) == 1  # 失敗があれば異常終了(監視で通知)
+    with sm() as db:
+        q = select(Receipt).where(Receipt.image_deleted_at.is_not(None))
+        deleted = {str(x.id) for x in db.execute(q).scalars()}
+    assert deleted == {ids[1], ids[2]}
+    assert (storage / f"{ids[0]}.jpg").exists()
+    monkeypatch.setattr(images, "delete_image", real)
+    assert cli(["purge-images"]) == 0  # 次回の実行で再試行される
+    assert list(storage.glob("*.jpg")) == []
+
+
+def test_check_storage_detects_missing_and_orphan_files(user_factory, worker_online, sm, storage):
+    from app.ocr import images
+    from app.ocr.cli import main as cli
+
+    a = User()
+    g, _ = make_group(a)
+    rid = upload(a, g["public_id"], png()).json()["id"]
+    with sm() as db:
+        assert images.check_storage(db).consistent
+    (storage / f"{rid}.jpg").unlink()
+    (storage / f"{uuid.uuid4()}.jpg").write_bytes(b"x")
+    with sm() as db:
+        rep = images.check_storage(db)
+    assert rep.missing_files == [rid] and rep.orphan_files == 1 and not rep.consistent
+    assert cli(["check-storage"]) == 2
