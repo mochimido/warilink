@@ -179,3 +179,14 @@
   - `playwright.config.ts` は、`E2E_DATABASE_URL` がローカルの `warilink_e2e` / `warilink_e2e_*` でなければ起動しない。
   - 残るリスク: 別のローカル PostgreSQL(例: 他プロジェクトのコンテナ)に偶然 `warilink_test` という DB があると防げない。
 - linux/amd64 での PaddleOCR の動作は CI の初回実行で確かめる(ローカルでは arm64 のみ確認済み)。
+
+
+## OCR パーサーの回帰(2026-10-20、P10)
+
+| 対象 | テスト |
+|---|---|
+| 途中の合計で商品を落とさない・候補の記録・支払後の合計を使わない・食い違う合計は補正せず警告 | `tests/ocr/test_parser.py`(P10 の節) |
+| 合計後の商品・印字点数との照合・ポイントの付与/利用/充当・返品・小計 | 同上 |
+| 性質テスト: 途中の合計を挟んでも全商品を読む / 1 行の読み落としは必ず警告になる(点数が印字されている場合) | `tests/ocr/test_synthetic_roundtrip.py` |
+
+修正前のパーサーで失敗した記録は、作業時の証跡(gate.json と before_fix.log)に残した。
