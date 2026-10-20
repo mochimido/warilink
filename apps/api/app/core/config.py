@@ -72,6 +72,13 @@ class Settings(BaseSettings):
     webauthn_rp_id: str | None = None  # 未指定なら allowed_origins の最初のホスト名
     webauthn_rp_name: str = "WariLink"
     webauthn_challenge_ttl_seconds: int = 300
+    # 本人の再確認(step-up): 振込先の登録・変更・全桁表示は、この秒数以内に Passkey で確認したセッションだけ
+    step_up_max_age_seconds: int = 600
+
+    # 振込先の暗号化鍵(KEK)。{"版": "base64 の 32 バイト"}。DB・バックアップには入れない。
+    # 未設定のとき、development / test は開発用の固定鍵を使い、production は振込先機能を停止する(503)
+    destination_keys: dict[str, str] = {}
+    destination_active_key: str | None = None
 
     @property
     def rp_id(self) -> str:
@@ -105,6 +112,10 @@ def production_problems(s: "Settings") -> list[str]:
     rp = s.rp_id
     if rp in LOCAL_HOSTS or not rp or not all(h and (h == rp or h.endswith("." + rp)) for h in hosts):
         out.append("WARILINK_WEBAUTHN_RP_ID を Web のホスト名(またはその親ドメイン)にしてください")
+    if s.destination_keys or s.destination_active_key:
+        from app.modules.payment_destinations.crypto import key_problems  # noqa: PLC0415
+
+        out.extend(key_problems(s))
     if s.feature_ads or s.feature_billing:
         out.append("広告・課金は未実装のため本番で有効にできません(WARILINK_FEATURE_ADS / WARILINK_FEATURE_BILLING)")
     return out

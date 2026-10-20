@@ -7,6 +7,7 @@ from app.modules.expenses.router import router as expenses_router
 from app.modules.groups.router import router as groups_router
 from app.modules.identity.router import router as identity_router
 from app.modules.meta.router import router as meta_router
+from app.modules.payment_destinations.router import router as destinations_router
 from app.modules.receipts.router import router as receipts_router
 from app.modules.settlement.router import router as settlement_router
 
@@ -37,7 +38,7 @@ def create_app() -> FastAPI:
 
     errors.install(app)
     for r in (identity_router, groups_router, expenses_router, settlement_router, meta_router,
-              receipts_router):
+              receipts_router, destinations_router):
         app.include_router(r, prefix=API_PREFIX)
 
     @app.get(f"{API_PREFIX}/health", tags=["meta"])

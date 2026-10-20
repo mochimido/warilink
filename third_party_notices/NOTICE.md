@@ -22,7 +22,7 @@
 | Noto Sans CJK(Debian `fonts-noto-cjk`) | SIL OFL-1.1 | ワーカーイメージ内で合成レシートの描画にのみ使用 |
 | webauthn(py_webauthn)3.0.1(2026-09-25 公開、https://github.com/duo-labs/py_webauthn) | BSD-3-Clause | `apps/api/uv.lock`。Passkey の登録・認証の検証(P07) |
 | cbor2 6.1.5 / pyOpenSSL 26.4.0 / pyasn1 0.6.4 / pyasn1-modules 0.4.2(webauthn の依存) | MIT / Apache-2.0 / BSD-2-Clause / BSD-2-Clause | `apps/api/uv.lock`(PyPI のメタデータで確認) |
-| cryptography 50.x(既存の推移的依存、webauthn も使用) | Apache-2.0 OR BSD-3-Clause | `apps/api/uv.lock` |
+| cryptography 50.0.2(P08 から直接依存。振込先の AES-256-GCM 暗号化) | Apache-2.0 OR BSD-3-Clause | `apps/api/uv.lock` |
 | @simplewebauthn/browser 14.0.0(2026-09-02 公開、https://github.com/MasterKale/SimpleWebAuthn、依存なし) | MIT | `pnpm-lock.yaml`。ブラウザの WebAuthn 呼び出しの薄いラッパー |
 
 ## 参照のみ(コードの複写なし)

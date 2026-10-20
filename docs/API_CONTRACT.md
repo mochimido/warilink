@@ -228,3 +228,28 @@ OpenAPI: `GET /api/v1/openapi.json`(TS型は `packages/contracts` に生成)。�
 - エラー: `PASSKEY_CHALLENGE_INVALID`(400、期限切れ・使用済み・別の人/セッションの challenge)、
   `PASSKEY_VERIFICATION_FAILED`(400、署名・Origin・RP ID・ユーザー検証・署名回数・未登録の Passkey。どれが原因かは返さない)、
   `PASSKEY_ALREADY_REGISTERED`(409)。
+
+
+### P08 追加(2026-10-20): 振込先(登録済みの本人のみ)
+
+旧案(§4 の `/account/payment-destinations` 複数件・PATCH)から、**1 人 1 件・PUT で新しい版**に簡略化した。
+
+| Method | Path | 説明 | 認可 |
+|---|---|---|---|
+| GET | `/account/payment-destination` | 自分の振込先(伏せ字・版・共有の可否)。未登録は null | 本人 |
+| POST | `/account/payment-destination` | 登録 `{kind: bank|paypay, bank|paypay, share_with_payers}` | 登録済み + step-up |
+| PUT | `/account/payment-destination` | 変更 = 新しい版(以前の版は書き換えない) | 登録済み + step-up |
+| POST | `/account/payment-destination/sharing` | 支払者への表示の許可・取り消し | 本人 |
+| GET | `/account/payment-destination/reveal` | 自分の全桁 | 本人 + step-up |
+| DELETE | `/account/payment-destination` | 消去(全版の暗号文と包んだ鍵を消す) | 本人 |
+| GET | `/settlements/{transfer_id}/destination` | 受取人が共有した振込先・照合コード・変更の警告 | **その送金の支払者だけ**(受取人 403、他は 404) |
+
+- step-up: 直近 `step_up_max_age_seconds`(既定 600 秒)以内に Passkey で確認したセッション。満たさなければ 401 `STEP_UP_REQUIRED`
+  (画面は Passkey で再確認してから同じ操作をやり直す)。
+- 支払者への表示: 最初に表示した版と照合コード(8 文字、0/O/1/I を除く)を `transfer_destination_pins` に固定する。受取人が後で
+  変更すると `changed_since_first_view=true` と以前の伏せ字を返す。精算案が置き換えられた送金は 409。共有なし・未登録は
+  `{available: false, reason: "not_shared"}`。
+- エラー: `REGISTRATION_REQUIRED`(403)、`DESTINATION_EXISTS`(409)、`DESTINATION_ERASED`(410)、
+  `DESTINATIONS_UNAVAILABLE`(503、鍵が未設定)、`DESTINATION_INTEGRITY`(500、改ざん・付け替え)。
+- 入力の検証: 銀行コード 4 桁・支店コード 3 桁・口座番号 7 桁・種類(普通/当座/貯蓄)・名義(正規化してカタカナ・英大文字・数字)。
+  銀行名・支店名とコードの対応は検証していない(銀行マスタを持たない)。

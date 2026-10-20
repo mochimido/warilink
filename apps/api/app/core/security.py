@@ -18,7 +18,7 @@ from fastapi import Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.tables import Group, Identity, Membership, SessionRow
+from app.models.tables import Group, Identity, Membership, SessionRow, SettlementTransfer
 
 from .config import get_settings
 from .db import get_db
@@ -149,3 +149,29 @@ def parse_uuid(value: str) -> uuid.UUID:
         return uuid.UUID(value)
     except ValueError as e:
         raise not_found() from e
+
+
+def require_step_up(request: Request, db: Session) -> SessionRow:
+    """本人の再確認(step-up)。直近 `step_up_max_age_seconds` 以内に Passkey で確認したセッションだけを通す。"""
+    sess = current_session(request, db)
+    max_age = timedelta(seconds=get_settings().step_up_max_age_seconds)
+    if sess is None or sess.assurance_level != "passkey" or sess.created_at < now() - max_age:
+        raise ApiError(401, "STEP_UP_REQUIRED", "本人確認のため、もう一度 Passkey で確認してください")
+    return sess
+
+
+def load_transfer_party(db: Session, transfer_id: str, ident: Identity, *,
+                        for_update: bool = False) -> tuple[SettlementTransfer, Membership]:
+    """送金 1 件と、その当事者(支払者または受取人)としての自分のメンバー行。当事者以外には存在を隠す(404)。"""
+    q = select(SettlementTransfer).where(SettlementTransfer.id == parse_uuid(transfer_id))
+    if for_update:
+        q = q.with_for_update()
+    t = db.execute(q).scalar_one_or_none()
+    if t is None:
+        raise not_found()
+    me = db.execute(select(Membership).where(
+        Membership.group_id == t.group_id, Membership.identity_id == ident.id,
+        Membership.status == "active")).scalar_one_or_none()
+    if me is None or me.id not in (t.from_member_id, t.to_member_id):
+        raise not_found()
+    return t, me

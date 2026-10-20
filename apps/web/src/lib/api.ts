@@ -74,3 +74,8 @@ export type Me = Schemas["IdentityOut"];
 export type SessionState = Schemas["SessionStateOut"];
 export type Passkey = Schemas["PasskeyOut"];
 export type PasskeyOptions = Schemas["OptionsOut"];
+
+export type Destination = Schemas["DestinationOut"];
+export type DestinationReveal = Schemas["DestinationRevealOut"];
+export type DestinationInput = Schemas["DestinationIn"];
+export type PayerDestination = Schemas["PayerDestinationOut"];

@@ -1,11 +1,101 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { api, errorMessage, type Batch, type Group, type SettlementPlan, type TransferRow } from "@/lib/api";
+import {
+  api,
+  errorMessage,
+  type Batch,
+  type Group,
+  type PayerDestination,
+  type SettlementPlan,
+  type TransferRow,
+} from "@/lib/api";
 import { formatYen } from "@/lib/format";
 import { memberNames } from "@/lib/group-context";
 
 const STEPS = ["unpaid", "reported_paid", "recipient_confirmed"] as const;
+
+const TYPE_LABEL: Record<string, string> = { ordinary: "普通", checking: "当座", savings: "貯蓄" };
+
+// 支払者だけに表示する振込先。アプリは送金しない(表示とコピーのみ)
+function DestinationView({ transfer }: { transfer: TransferRow }) {
+  const [d, setD] = useState<PayerDestination | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  async function copy(label: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+    } catch {
+      setError("コピーできませんでした。手動で入力してください");
+    }
+  }
+
+  if (!d) {
+    return (
+      <>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() =>
+            api<PayerDestination>(`/settlements/${transfer.id}/destination`)
+              .then(setD)
+              .catch((e) => setError(errorMessage(e)))
+          }
+        >
+          振込先を表示
+        </button>
+        {error && <span className="error" role="alert">{error}</span>}
+      </>
+    );
+  }
+  if (!d.available || !d.details) {
+    return <p className="muted">受取人は振込先を共有していません。受取人に直接確認してください。</p>;
+  }
+  const x = d.details as Record<string, string>;
+  const rows: [string, string][] =
+    d.kind === "bank"
+      ? [
+          ["銀行", `${x.bank_name}(${x.bank_code})`],
+          ["支店", `${x.branch_name}(${x.branch_code})`],
+          ["種類", TYPE_LABEL[x.account_type] ?? x.account_type],
+          ["口座番号", x.account_number],
+          ["名義", x.holder_kana],
+        ]
+      : [["PayPay ID", x.paypay_id]];
+  return (
+    <div className="card" aria-label="振込先">
+      {d.changed_since_first_view && (
+        <p className="notice warn" role="alert">
+          受取人が振込先を変更しました。以前に表示した振込先({d.first_viewed_masked_label})ではなく、下の振込先を確認してください。
+        </p>
+      )}
+      <dl>
+        {rows.map(([k, v]) => (
+          <div key={k} className="row">
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+            {(k === "口座番号" || k === "PayPay ID") && (
+              <button type="button" className="secondary" onClick={() => copy(k, v)}>
+                {copied === k ? "コピーしました" : `${k}をコピー`}
+              </button>
+            )}
+          </div>
+        ))}
+        <div className="row">
+          <dt>照合コード</dt>
+          <dd>{d.reference_code}</dd>
+          <button type="button" className="secondary" onClick={() => copy("照合コード", d.reference_code ?? "")}>
+            {copied === "照合コード" ? "コピーしました" : "照合コードをコピー"}
+          </button>
+        </div>
+      </dl>
+      <p className="muted">{d.notice}</p>
+      {error && <p className="error" role="alert">{error}</p>}
+    </div>
+  );
+}
 
 function ProgressSummary({ p }: { p: Batch["progress"] }) {
   return (
@@ -166,6 +256,9 @@ export function SettlementPanel({ group }: { group: Group }) {
                           送金したと申告
                         </button>
                       </>
+                    )}
+                    {t.from_member_id === me && (t.status === "unpaid" || t.status === "reported_paid") && (
+                      <DestinationView transfer={t} />
                     )}
                     {t.to_member_id === me && t.status !== "recipient_confirmed" && (
                       <button type="button" onClick={() => run(() => api(`/settlements/${t.id}/confirm-received`, { method: "POST" }))}>

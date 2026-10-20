@@ -3218,6 +3218,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "pillow" },
     { name = "psycopg", extra = ["binary"] },
@@ -3245,6 +3246,7 @@ ocr = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
+    { name = "cryptography", specifier = ">=50.0.2" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "pillow", specifier = ">=11" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },

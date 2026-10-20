@@ -1,7 +1,7 @@
 """テーブル定義。金額はすべて BIGINT の整数円(minor units)。
 
-Phase 3 でレシート・OCR・利用枠のテーブルを追加。P07 で Passkey(WebAuthn)を追加。
-振込先・銀行照合は後続(docs/DATA_MODEL.md)。
+Phase 3 でレシート・OCR・利用枠のテーブルを追加。P07 で Passkey(WebAuthn)、P08 で暗号化した振込先を追加。
+銀行照合は後続(docs/DATA_MODEL.md)。
 """
 
 from __future__ import annotations
@@ -413,3 +413,53 @@ class OcrWorkerHeartbeat(Base):
     model_version: Mapped[str] = mapped_column(String(128), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PaymentDestination(Base):
+    """登録済み利用者の振込先(1 人 1 件)。中身は版ごとに暗号化して payment_destination_versions に置く。"""
+
+    __tablename__ = "payment_destinations"
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_identity_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("identities.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # bank | paypay
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # 受取人が「精算の支払者に表示する」を許可しているか(取り消すと以後は表示しない)
+    share_with_payers: Mapped[bool] = mapped_column(nullable=False, default=False)
+    created_at: Mapped[datetime] = _created()
+    erased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        CheckConstraint("kind IN ('bank','paypay')", name="ck_destination_kind"),
+        Index("uq_destination_owner_active", "owner_identity_id", unique=True,
+              postgresql_where=text("erased_at IS NULL")),
+    )
+
+
+class PaymentDestinationVersion(Base):
+    """振込先の 1 版。作成後は変更しない(消去時に暗号文だけを消す)。
+
+    暗号化: 版ごとの乱数鍵(DEK)で AES-256-GCM、DEK を鍵管理側の鍵(KEK、`key_version`)で包む。
+    KEK は DB・バックアップに含めない(環境変数。本番は KMS 等へ移す)。
+    """
+
+    __tablename__ = "payment_destination_versions"
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    destination_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("payment_destinations.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    key_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    wrapped_dek: Mapped[bytes | None] = mapped_column(LargeBinary)  # 消去後は NULL(暗号文を復号できなくする)
+    nonce: Mapped[bytes | None] = mapped_column(LargeBinary(12))
+    ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary)
+    masked_label: Mapped[str] = mapped_column(String(80), nullable=False)  # 例: 「0001 銀行 / 普通 ****567」
+    created_at: Mapped[datetime] = _created()
+    __table_args__ = (UniqueConstraint("destination_id", "version", name="uq_destination_version"),)
+
+
+class TransferDestinationPin(Base):
+    """支払者に最初に表示した振込先の版と照合コード。受取人が後で変更しても書き換えない。"""
+
+    __tablename__ = "transfer_destination_pins"
+    transfer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("settlement_transfers.id"), primary_key=True)
+    destination_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("payment_destination_versions.id"),
+                                                              nullable=False)
+    reference_code: Mapped[str] = mapped_column(String(12), nullable=False)
+    created_at: Mapped[datetime] = _created()

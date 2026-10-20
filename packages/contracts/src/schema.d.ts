@@ -583,6 +583,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/payment-destination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mine */
+        get: operations["get_mine_api_v1_account_payment_destination_get"];
+        /**
+         * Change
+         * @description 新しい版を作る(以前の版は書き換えない。支払者には変更を警告する)。
+         */
+        put: operations["change_api_v1_account_payment_destination_put"];
+        /** Create */
+        post: operations["create_api_v1_account_payment_destination_post"];
+        /**
+         * Erase
+         * @description 消去: すべての版の暗号文と包んだ鍵を消し、復号できなくする(伏せ字の表示だけ残る)。
+         */
+        delete: operations["erase_api_v1_account_payment_destination_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/payment-destination/sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Sharing
+         * @description 共有の許可・取り消し。取り消すと、以後は支払者に表示しない(既に見た人の記憶は消せない)。
+         */
+        post: operations["set_sharing_api_v1_account_payment_destination_sharing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/payment-destination/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reveal */
+        get: operations["reveal_api_v1_account_payment_destination_reveal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{transfer_id}/destination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payer View */
+        get: operations["payer_view_api_v1_settlements__transfer_id__destination_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -699,6 +779,26 @@ export interface components {
             /** Balance Sum Minor */
             balance_sum_minor: number;
         };
+        /** BankIn */
+        BankIn: {
+            /** Bank Code */
+            bank_code: string;
+            /** Bank Name */
+            bank_name: string;
+            /** Branch Code */
+            branch_code: string;
+            /** Branch Name */
+            branch_name: string;
+            /**
+             * Account Type
+             * @enum {string}
+             */
+            account_type: "ordinary" | "checking" | "savings";
+            /** Account Number */
+            account_number: string;
+            /** Holder Kana */
+            holder_kana: string;
+        };
         /** BatchCreate */
         BatchCreate: {
             /** Expected Ledger Version */
@@ -753,6 +853,55 @@ export interface components {
             breakdown_total_minor?: number | null;
             /** Receipt Total Minor */
             receipt_total_minor?: number | null;
+        };
+        /** DestinationIn */
+        DestinationIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "bank" | "paypay";
+            bank?: components["schemas"]["BankIn"] | null;
+            paypay?: components["schemas"]["PayPayIn"] | null;
+            /**
+             * Share With Payers
+             * @default false
+             */
+            share_with_payers: boolean;
+        };
+        /** DestinationOut */
+        DestinationOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Version */
+            version: number;
+            /** Masked Label */
+            masked_label: string;
+            /** Share With Payers */
+            share_with_payers: boolean;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** DestinationRevealOut */
+        DestinationRevealOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Version */
+            version: number;
+            /** Masked Label */
+            masked_label: string;
+            /** Share With Payers */
+            share_with_payers: boolean;
+            /** Updated At */
+            updated_at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
         };
         /** ExpenseCreate */
         ExpenseCreate: {
@@ -1082,12 +1231,46 @@ export interface components {
             /** Backed Up */
             backed_up: boolean;
         };
+        /** PayPayIn */
+        PayPayIn: {
+            /** Paypay Id */
+            paypay_id: string;
+        };
         /** Payer */
         Payer: {
             /** Member Id */
             member_id: string;
             /** Amount Minor */
             amount_minor: number;
+        };
+        /** PayerDestinationOut */
+        PayerDestinationOut: {
+            /** Available */
+            available: boolean;
+            /** Reason */
+            reason?: "not_shared" | null;
+            /** Kind */
+            kind?: string | null;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+            /** Masked Label */
+            masked_label?: string | null;
+            /** Reference Code */
+            reference_code?: string | null;
+            /**
+             * Changed Since First View
+             * @default false
+             */
+            changed_since_first_view: boolean;
+            /** First Viewed Masked Label */
+            first_viewed_masked_label?: string | null;
+            /**
+             * Notice
+             * @default このアプリは送金を実行しません。表示された振込先へ、ご自身の銀行アプリ等で送金してください。照合コードは送金の目印で、支払いの証明ではありません
+             */
+            notice: string;
         };
         /** PlanOut */
         PlanOut: {
@@ -1279,6 +1462,11 @@ export interface components {
             recipient_confirmed_count: number;
             /** Recipient Confirmed Minor */
             recipient_confirmed_minor: number;
+        };
+        /** SharingIn */
+        SharingIn: {
+            /** Share With Payers */
+            share_with_payers: boolean;
         };
         /** SplitIn */
         SplitIn: {
@@ -2470,6 +2658,194 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mine_api_v1_account_payment_destination_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationOut"] | null;
+                };
+            };
+        };
+    };
+    change_api_v1_account_payment_destination_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DestinationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_account_payment_destination_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DestinationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    erase_api_v1_account_payment_destination_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_sharing_api_v1_account_payment_destination_sharing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reveal_api_v1_account_payment_destination_reveal_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationRevealOut"];
+                };
+            };
+        };
+    };
+    payer_view_api_v1_settlements__transfer_id__destination_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayerDestinationOut"];
                 };
             };
             /** @description Validation Error */
