@@ -173,6 +173,27 @@ paddleocr 3.7.0 / paddlex 3.7.2 / paddlepaddle 3.3.1(CPU)/ opencv-contrib-python
 - `--baseline 前回結果.json` を渡すと、同じデータセット(画像+ラベルのハッシュ一致)で指標が1つでも悪化した候補を `rejected`(終了コード 2)とする。データセットが違えば `incomparable`。
 - `--reuse-tokens` で保存済みの認識結果を使い、パーサーだけを評価できる(パーサー調整用)。
 
+### 8.1 評価の再現性と昇格停止ゲート(eval-0.2.0、2026-10-21、P12)
+
+修正前は、指標がすべて未測定(None)でも `accepted`、調整行の種類が違っても金額が同じなら完全一致、と判定していた(再現して記録)。
+
+| 項目 | eval-0.2.0 |
+|---|---|
+| 完全一致 | 商品(名前・数量・金額)・合計・調整行(**種類+金額**)。税区分(8% / 10%)まで一致したかは `structure_exact_rate` で別に示す |
+| 件数 | 0 件は `blocked`、`--min-samples`(既定 30)未満は `insufficient`。どちらも採否を判定しない(終了コード 3) |
+| 信頼区間 | `receipt_exact_ci95` / `structure_exact_ci95` / `total_correct_ci95`(Wilson、95%) |
+| 速度・原価 | `latency_ms_mean` / `latency_ms_p95` / `cpu_seconds_per_receipt`(評価プロセスの CPU 時間) |
+| 出所の記録 | `provenance`: 評価の版、データセット・画像のハッシュ、ラベルの版、パーサー・前処理の版、モデル(名前・版・重みのハッシュ)、トークンキャッシュの版 |
+| 比較 | 同じデータセット・同じ評価の版で、モデル / 前処理 / パーサーのうち変わったのが 1 つ以下のときだけ。2 つ以上同時に変わっていれば `incomparable`。未測定の指標があれば `blocked` |
+| トークンキャッシュ | 版 2: モデル・前処理・画像の SHA-256 を記録。古い形式・画像の変更・別モデルとの混在は `blocked`(終了コード 3) |
+| 出所の区分 | `source`: `synthetic` / `public`(CORD・SROIE 等)/ `real_ja`。`by_source` に別々に集計。出所の無い verified ラベルは使わない |
+| 実レシート | `real_ja` は `label_status=verified`・`consent_eval: true`・`split: tune|holdout` がそろったものだけ。精度の判断は `real_ja_holdout` だけで行い、調整(tune)に使ったデータで成功を宣言しない |
+
+- 終了コード: 0 = 評価できた(基準があれば accepted)、2 = rejected、3 = incomparable / blocked / insufficient。
+- 公開データ(CORD・SROIE)は**取り込んでいない**。主に英語・インドネシア語などで、日本語の精度の根拠にならない。
+  使う場合はデータセットごとのライセンス・利用条件を確認してから(docs/OSS_REUSE_PLAN.md)。
+- **実レシートでの評価は未実施**(データ未提供)。合成データでの結果は、商用の精度として扱わない。
+
 ### 合成データでの結果(参考。実レシートの精度ではない)
 
 合成レシート生成(`cli synth`)は、このパーサーと同じ作者が作ったもので、配置・書式の多様性は実レシートより
@@ -183,6 +204,7 @@ paddleocr 3.7.0 / paddlex 3.7.2 / paddlepaddle 3.3.1(CPU)/ opencv-contrib-python
 | synth easy(seed 7, macOS) | 20 | 1.00 | |
 | synth hard(seed 11, 傾き・ぼけ・ノイズ, macOS) | 30 | 1.00 | 初回 0.967 → 小計と金額の行分かれを修正 |
 | synth hard(seed 5, linux/arm64 コンテナ) | 10 | 1.00 | |
+| synth hard(seed 11, macOS、eval-0.2.0 / rule-ja-0.2.0 / cv-0.2.0、2026-10-21) | 30 | 1.00(95% CI 0.89–1.00) | **structure_exact_rate 0.77(CI 0.59–0.88)**: 軽減税率の記号があり税の行が無い(内税)レシートで、記号なしの商品を 10% と判定できていない。パーサーの残課題(未修正)。平均 3.5 秒・CPU 3.5 秒/枚 |
 
 ## 9. 利用者(あなた)が行う作業
 

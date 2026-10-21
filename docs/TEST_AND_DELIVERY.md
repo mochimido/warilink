@@ -190,3 +190,18 @@
 | 性質テスト: 途中の合計を挟んでも全商品を読む / 1 行の読み落としは必ず警告になる(点数が印字されている場合) | `tests/ocr/test_synthetic_roundtrip.py` |
 
 修正前のパーサーで失敗した記録は、作業時の証跡(gate.json と before_fix.log)に残した。
+
+
+## OCR 評価ゲート(2026-10-21、P12)
+
+| 対象 | テスト |
+|---|---|
+| 0 件 → blocked、件数不足 → insufficient、未測定・古い形式 → blocked | `tests/ocr/test_benchmark_gates.py`、`test_evaluate_and_corrections.py` |
+| 種類違いの同額 → 不一致、税区分の違い → structure_exact のみ不一致 | 同上 |
+| 同じ合成データで before/after: 同じ → accepted、商品 1 行の欠落 → rejected | 同上 |
+| データ・ラベルの変更 → incomparable、モデルとパーサーの同時変更 → incomparable | 同上 |
+| 古いキャッシュ・別モデルの混在・画像の変更 → blocked | 同上 |
+| 出所の区分と、実レシートの同意・分割の要件 | 同上 |
+| CLI の終了コード(0 / 2 / 3) | 同上 |
+
+実レシートでの評価(Stage C)は未実施。

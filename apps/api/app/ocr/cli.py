@@ -2,7 +2,7 @@
 
   python -m app.ocr.cli recognize 画像 [--json]          1枚を読み取って下書きを表示(DB 不要)
   python -m app.ocr.cli synth --out DIR --count 50       合成レシートと正解ラベルを生成
-  python -m app.ocr.cli evaluate DIR [--baseline F]      評価(verified/synthetic ラベルのみ)
+  python -m app.ocr.cli evaluate DIR [--baseline F]      評価(verified/synthetic ラベルのみ。終了コード 0/2/3)
   python -m app.ocr.cli purge-images [--dry-run] [--json]  保存期間を過ぎた画像を削除(失敗があれば終了コード 1)
   python -m app.ocr.cli check-storage                    DB と画像ファイルの不一致を検査(不一致は終了コード 2)
   python -m app.ocr.cli stats                            読み取りの訂正件数・確認時間の集計(DB)
@@ -61,10 +61,14 @@ def cmd_synth(a: argparse.Namespace) -> int:
 
 
 def cmd_evaluate(a: argparse.Namespace) -> int:
+    """終了コード: 0 = 評価できた(基準があれば accepted)/ 2 = rejected(悪化)/
+    3 = incomparable・blocked・insufficient(比較できない・件数不足・未測定。採用しない)。
+    """
     from app.core.config import get_settings  # noqa: PLC0415
-    from app.ocr.evaluate import compare, evaluate  # noqa: PLC0415
+    from app.ocr.evaluate import EvalBlocked, compare, evaluate  # noqa: PLC0415
 
     adapter = None if a.reuse_tokens else _adapter()
+    preprocess_version = None
 
     def recognize(path: Path):
         from app.ocr.preprocess import decode, prepare  # noqa: PLC0415
@@ -74,18 +78,29 @@ def cmd_evaluate(a: argparse.Namespace) -> int:
             return []
         return adapter.recognize(prepare(img).image) if adapter else []
 
-    result = evaluate(Path(a.dataset), adapter, low_confidence=get_settings().ocr_low_confidence,
-                      reuse_tokens=a.reuse_tokens,
-                      recognize_and_prepare=None if a.reuse_tokens else recognize)
+    if adapter is not None:
+        from app.ocr.worker import PREPROCESS_VERSION  # noqa: PLC0415
+
+        preprocess_version = PREPROCESS_VERSION
+    try:
+        result = evaluate(Path(a.dataset), adapter, low_confidence=get_settings().ocr_low_confidence,
+                          reuse_tokens=a.reuse_tokens, recognize_and_prepare=None if a.reuse_tokens else recognize,
+                          min_samples=a.min_samples, preprocess_version=preprocess_version)
+    except EvalBlocked as e:
+        print(json.dumps({"status": "blocked", "reason": str(e)}, ensure_ascii=False))
+        return 3
     if a.baseline:
         result["comparison"] = compare(result, json.loads(Path(a.baseline).read_text()), a.tolerance)
     text = json.dumps(result, ensure_ascii=False, indent=1)
     if a.out:
         Path(a.out).write_text(text)
-    print(json.dumps({k: result[k] for k in ("metrics", "skipped", "dataset_digest", "parser_version", "model")}
-                     | ({"comparison": result["comparison"]} if "comparison" in result else {}),
+    keys = ("status", "metrics", "by_source", "skipped", "dataset_digest", "provenance", "note")
+    print(json.dumps({k: result[k] for k in keys} | ({"comparison": result["comparison"]} if a.baseline else {}),
                      ensure_ascii=False, indent=1))
-    return 2 if result.get("comparison", {}).get("decision") == "rejected" else 0
+    if a.baseline:
+        decision = result["comparison"]["decision"]
+        return {"accepted": 0, "rejected": 2}.get(decision, 3)
+    return 3 if result["status"] == "blocked" else 0
 
 
 def cmd_purge(a: argparse.Namespace) -> int:
@@ -161,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--tolerance", type=float, default=0.0)
     e.add_argument("--out")
     e.add_argument("--reuse-tokens", action="store_true", help="保存済みの認識結果でパーサーだけを評価")
+    e.add_argument("--min-samples", type=int, default=30, help="これ未満の件数では採否を判定しない(insufficient)")
     g = sub.add_parser("purge-images")
     g.add_argument("--dry-run", action="store_true")
     g.add_argument("--json", action="store_true")
