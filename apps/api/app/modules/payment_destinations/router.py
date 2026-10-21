@@ -314,4 +314,3 @@ def payer_view(transfer_id: str, db: Session = Depends(get_db),
     return PayerDestinationOut(available=True, kind=d.kind, details=details, masked_label=v.masked_label,
                                reference_code=pin.reference_code, changed_since_first_view=first_label is not None,
                                first_viewed_masked_label=first_label)
-

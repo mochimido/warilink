@@ -336,4 +336,3 @@ def revoke_other_sessions(request: Request, db: Session = Depends(get_db),
     _audit(db, ident, "session.revoke_others", count=len(n))
     db.commit()
     return state_out(db, ident, sess.assurance_level)
-
