@@ -1,0 +1,4875 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WariLink API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/auth/passkeys/register/options": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Register Options",
+        "operationId": "register_options_api_v1_auth_passkeys_register_options_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterOptionsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/register/verify": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Register Verify",
+        "operationId": "register_verify_api_v1_auth_passkeys_register_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/login/options": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Login Options",
+        "operationId": "login_options_api_v1_auth_passkeys_login_options_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionsOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/login/verify": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Login Verify",
+        "operationId": "login_verify_api_v1_auth_passkeys_login_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys": {
+      "get": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "List Passkeys",
+        "operationId": "list_passkeys_api_v1_auth_passkeys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Passkeys Api V1 Auth Passkeys Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/passkeys/{passkey_id}": {
+      "delete": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Revoke Passkey",
+        "operationId": "revoke_passkey_api_v1_auth_passkeys__passkey_id__delete",
+        "parameters": [
+          {
+            "name": "passkey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Passkey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/revoke-others": {
+      "post": {
+        "tags": [
+          "identity",
+          "auth"
+        ],
+        "summary": "Revoke Other Sessions",
+        "description": "紛失した端末などに残ったログインを、この端末以外すべて失効させる。",
+        "operationId": "revoke_other_sessions_api_v1_auth_sessions_revoke_others_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/guest": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Start Guest",
+        "description": "メール・電話番号不要のゲストセッションを開始する。既存の有効なセッションがあれば再利用する。",
+        "operationId": "start_guest_api_v1_identity_guest_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/me": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_v1_identity_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/IdentityOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Me Api V1 Identity Me Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups": {
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Create Group",
+        "operationId": "create_group_api_v1_groups_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Get Group",
+        "operationId": "get_group_api_v1_groups__public_id__get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/members": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "List Members",
+        "operationId": "list_members_api_v1_groups__public_id__members_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberOut"
+                  },
+                  "title": "Response List Members Api V1 Groups  Public Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Add Members",
+        "description": "名前だけのメンバーを追加(アプリを使わない人も精算対象にできる)。",
+        "operationId": "add_members_api_v1_groups__public_id__members_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembersAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/invites": {
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Create Invite",
+        "operationId": "create_invite_api_v1_groups__public_id__invites_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/{token}": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Preview Invite",
+        "description": "参加前の確認。グループ名と、まだ誰も紐付けていない名前だけを返す(金額は返さない)。",
+        "operationId": "preview_invite_api_v1_invites__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/{token}/join": {
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Join",
+        "operationId": "join_api_v1_invites__token__join_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "List Expenses",
+        "operationId": "list_expenses_api_v1_groups__public_id__expenses_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExpenseOut"
+                  },
+                  "title": "Response List Expenses Api V1 Groups  Public Id  Expenses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Create Expense",
+        "operationId": "create_expense_api_v1_groups__public_id__expenses_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/search": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Search Expenses",
+        "description": "グループ内の有効な支出だけを検索する(他のグループの支出は対象にならない)。",
+        "operationId": "search_expenses_api_v1_groups__public_id__expenses_search_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "food",
+                    "drinks",
+                    "groceries",
+                    "transport",
+                    "lodging",
+                    "entertainment",
+                    "daily",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "uncategorized",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Uncategorized"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "payer_member_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payer Member Id"
+            }
+          },
+          {
+            "name": "created_by_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Created By Me"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "amount_desc",
+                "amount_asc"
+              ],
+              "type": "string",
+              "default": "date_desc",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseSearchOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/stats": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Group Stats",
+        "description": "グループ内の集計(このグループのメンバーへの表示のためだけに計算する。広告・外部提供には使わない)。",
+        "operationId": "group_stats_api_v1_groups__public_id__expenses_stats_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupStatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/preview": {
+      "post": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Preview Expense",
+        "description": "保存せずに負担額と、反映後の精算候補を計算する(入力のたびに呼ぶ想定)。",
+        "operationId": "preview_expense_api_v1_groups__public_id__expenses_preview_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpensePreviewIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpensePreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/{expense_id}": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Get Expense",
+        "operationId": "get_expense_api_v1_groups__public_id__expenses__expense_id__get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Update Expense",
+        "operationId": "update_expense_api_v1_groups__public_id__expenses__expense_id__put",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Expense Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "Delete Expense",
+        "operationId": "delete_expense_api_v1_groups__public_id__expenses__expense_id__delete",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Expense Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpenseOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/expenses/{expense_id}/revisions": {
+      "get": {
+        "tags": [
+          "expenses"
+        ],
+        "summary": "List Revisions",
+        "operationId": "list_revisions_api_v1_groups__public_id__expenses__expense_id__revisions_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "expense_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Expense Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RevisionOut"
+                  },
+                  "title": "Response List Revisions Api V1 Groups  Public Id  Expenses  Expense Id  Revisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/balances": {
+      "get": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Balances",
+        "operationId": "balances_api_v1_groups__public_id__balances_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalancesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/settlements/preview": {
+      "post": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Preview",
+        "operationId": "preview_api_v1_groups__public_id__settlements_preview_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementPlanOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/settlement-batches": {
+      "post": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Create Batch",
+        "operationId": "create_batch_api_v1_groups__public_id__settlement_batches_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "List Batches",
+        "operationId": "list_batches_api_v1_groups__public_id__settlement_batches_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BatchOut"
+                  },
+                  "title": "Response List Batches Api V1 Groups  Public Id  Settlement Batches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/settlement-batches/current": {
+      "get": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Current Batch",
+        "operationId": "current_batch_api_v1_groups__public_id__settlement_batches_current_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/BatchOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Current Batch Api V1 Groups  Public Id  Settlement Batches Current Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settlements/{transfer_id}": {
+      "get": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Get Transfer",
+        "operationId": "get_transfer_api_v1_settlements__transfer_id__get",
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settlements/{transfer_id}/report-paid": {
+      "post": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Report Paid",
+        "description": "支払者による送金申告。アプリは送金を実行しない。申告は銀行での確認を意味しない。",
+        "operationId": "report_paid_api_v1_settlements__transfer_id__report_paid_post",
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settlements/{transfer_id}/confirm-received": {
+      "post": {
+        "tags": [
+          "settlement"
+        ],
+        "summary": "Confirm Received",
+        "description": "受取人による手動の受取確認。銀行による証明ではない。",
+        "operationId": "confirm_received_api_v1_settlements__transfer_id__confirm_received_post",
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Plans",
+        "description": "料金比較の表示用。数値はすべて設定値から返す(画面に定数を持たない)。",
+        "operationId": "plans_api_v1_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ocr/quota": {
+      "get": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Get Quota",
+        "operationId": "get_quota_api_v1_ocr_quota_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotaOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/receipts/{receipt_id}": {
+      "get": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Get Receipt",
+        "operationId": "get_receipt_api_v1_groups__public_id__receipts__receipt_id__get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "receipt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Receipt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/receipts/{receipt_id}/image": {
+      "get": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Get Receipt Image",
+        "operationId": "get_receipt_image_api_v1_groups__public_id__receipts__receipt_id__image_get",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          },
+          {
+            "name": "receipt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Receipt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{public_id}/receipts": {
+      "post": {
+        "tags": [
+          "receipts",
+          "receipts"
+        ],
+        "summary": "Upload Receipt",
+        "description": "安い確認から順に行い、重い画像処理(デコード・再エンコード)は最後にする。\n\n1. メンバー確認 → 2. バイト数 → 3. 同じ画像(枠を消費しない)→ 4. ワーカー稼働 → 5. 利用枠(ロックなし)\n→ 6. 流量制限 → 7. ヘッダーの形式・寸法 → 8. デコード・EXIF 除去 → 9. 枠の確保(ロック)と制限の再確認 → 保存",
+        "operationId": "upload_receipt_api_v1_groups__public_id__receipts_post",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Public Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_receipt_api_v1_groups__public_id__receipts_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/payment-destination": {
+      "get": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Get Mine",
+        "operationId": "get_mine_api_v1_account_payment_destination_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DestinationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Mine Api V1 Account Payment Destination Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Change",
+        "description": "新しい版を作る(以前の版は書き換えない。支払者には変更を警告する)。",
+        "operationId": "change_api_v1_account_payment_destination_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DestinationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DestinationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_account_payment_destination_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DestinationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DestinationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Erase",
+        "description": "消去: すべての版の暗号文と包んだ鍵を消し、復号できなくする(伏せ字の表示だけ残る)。",
+        "operationId": "erase_api_v1_account_payment_destination_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/account/payment-destination/sharing": {
+      "post": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Set Sharing",
+        "description": "共有の許可・取り消し。取り消すと、以後は支払者に表示しない(既に見た人の記憶は消せない)。",
+        "operationId": "set_sharing_api_v1_account_payment_destination_sharing_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DestinationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/payment-destination/reveal": {
+      "get": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Reveal",
+        "operationId": "reveal_api_v1_account_payment_destination_reveal_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DestinationRevealOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settlements/{transfer_id}/destination": {
+      "get": {
+        "tags": [
+          "payment-destinations"
+        ],
+        "summary": "Payer View",
+        "operationId": "payer_view_api_v1_settlements__transfer_id__destination_get",
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayerDestinationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdjustmentIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "tax",
+              "discount",
+              "coupon",
+              "service_charge",
+              "rounding",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 60,
+            "title": "Label",
+            "default": ""
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          },
+          "rule": {
+            "$ref": "#/components/schemas/AdjustmentRuleIn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "amount_minor"
+        ],
+        "title": "AdjustmentIn"
+      },
+      "AdjustmentRuleIn": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "proportional",
+              "equal",
+              "members",
+              "exact"
+            ],
+            "title": "Type",
+            "default": "proportional"
+          },
+          "scope_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Item Ids"
+          },
+          "scope_tax_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "8",
+                  "10"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Tax Group"
+          },
+          "member_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Ids"
+          },
+          "amounts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MemberValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amounts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdjustmentRuleIn"
+      },
+      "AllocationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "allocations": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Allocations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "allocations"
+        ],
+        "title": "AllocationOut"
+      },
+      "AssumptionsOut": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "integer_minor_units": {
+            "type": "boolean",
+            "title": "Integer Minor Units"
+          },
+          "any_member_can_pay_any_member": {
+            "type": "boolean",
+            "title": "Any Member Can Pay Any Member"
+          },
+          "transfer_fees_considered": {
+            "type": "boolean",
+            "title": "Transfer Fees Considered"
+          },
+          "per_transfer_limit_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Transfer Limit Minor"
+          },
+          "locked_transfers_preserved": {
+            "type": "boolean",
+            "title": "Locked Transfers Preserved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "integer_minor_units",
+          "any_member_can_pay_any_member",
+          "transfer_fees_considered",
+          "per_transfer_limit_minor",
+          "locked_transfers_preserved"
+        ],
+        "title": "AssumptionsOut"
+      },
+      "BalanceRowOut": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "title": "Member Id"
+          },
+          "paid_minor": {
+            "type": "integer",
+            "title": "Paid Minor"
+          },
+          "share_minor": {
+            "type": "integer",
+            "title": "Share Minor"
+          },
+          "settled_out_minor": {
+            "type": "integer",
+            "title": "Settled Out Minor"
+          },
+          "settled_in_minor": {
+            "type": "integer",
+            "title": "Settled In Minor"
+          },
+          "reported_unconfirmed_out_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Out Minor",
+            "default": 0
+          },
+          "reported_unconfirmed_in_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed In Minor",
+            "default": 0
+          },
+          "net_minor": {
+            "type": "integer",
+            "title": "Net Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "paid_minor",
+          "share_minor",
+          "settled_out_minor",
+          "settled_in_minor",
+          "net_minor"
+        ],
+        "title": "BalanceRowOut"
+      },
+      "BalancesOut": {
+        "properties": {
+          "ledger_version": {
+            "type": "integer",
+            "title": "Ledger Version"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceRowOut"
+            },
+            "type": "array",
+            "title": "Balances"
+          },
+          "balance_sum_minor": {
+            "type": "integer",
+            "title": "Balance Sum Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ledger_version",
+          "currency",
+          "balances",
+          "balance_sum_minor"
+        ],
+        "title": "BalancesOut"
+      },
+      "BankIn": {
+        "properties": {
+          "bank_code": {
+            "type": "string",
+            "pattern": "^\\d{4}$",
+            "title": "Bank Code"
+          },
+          "bank_name": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Bank Name"
+          },
+          "branch_code": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Branch Code"
+          },
+          "branch_name": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Branch Name"
+          },
+          "account_type": {
+            "type": "string",
+            "enum": [
+              "ordinary",
+              "checking",
+              "savings"
+            ],
+            "title": "Account Type"
+          },
+          "account_number": {
+            "type": "string",
+            "pattern": "^\\d{7}$",
+            "title": "Account Number"
+          },
+          "holder_kana": {
+            "type": "string",
+            "title": "Holder Kana"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bank_code",
+          "bank_name",
+          "branch_code",
+          "branch_name",
+          "account_type",
+          "account_number",
+          "holder_kana"
+        ],
+        "title": "BankIn"
+      },
+      "BatchCreate": {
+        "properties": {
+          "expected_ledger_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Ledger Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_ledger_version"
+        ],
+        "title": "BatchCreate"
+      },
+      "BatchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "superseded"
+            ],
+            "title": "State"
+          },
+          "ledger_version": {
+            "type": "integer",
+            "title": "Ledger Version"
+          },
+          "is_stale": {
+            "type": "boolean",
+            "title": "Is Stale"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "balances": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Balances"
+          },
+          "optimization": {
+            "$ref": "#/components/schemas/OptimizationOut"
+          },
+          "transfers": {
+            "items": {
+              "$ref": "#/components/schemas/TransferOut"
+            },
+            "type": "array",
+            "title": "Transfers"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/SettlementProgressOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "state",
+          "ledger_version",
+          "is_stale",
+          "created_at",
+          "balances",
+          "optimization",
+          "transfers",
+          "progress"
+        ],
+        "title": "BatchOut"
+      },
+      "Body_upload_receipt_api_v1_groups__public_id__receipts_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_receipt_api_v1_groups__public_id__receipts_post"
+      },
+      "BreakdownOut": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/IssueOut"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "shares": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Shares"
+          },
+          "item_allocations": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationOut"
+            },
+            "type": "array",
+            "title": "Item Allocations"
+          },
+          "adjustment_allocations": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationOut"
+            },
+            "type": "array",
+            "title": "Adjustment Allocations"
+          },
+          "breakdown_total_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakdown Total Minor"
+          },
+          "receipt_total_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Total Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "issues",
+          "shares"
+        ],
+        "title": "BreakdownOut"
+      },
+      "CategoryStat": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "count",
+          "total_minor"
+        ],
+        "title": "CategoryStat"
+      },
+      "DestinationIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "bank",
+              "paypay"
+            ],
+            "title": "Kind"
+          },
+          "bank": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BankIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paypay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PayPayIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "share_with_payers": {
+            "type": "boolean",
+            "title": "Share With Payers",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "DestinationIn"
+      },
+      "DestinationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "masked_label": {
+            "type": "string",
+            "title": "Masked Label"
+          },
+          "share_with_payers": {
+            "type": "boolean",
+            "title": "Share With Payers"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "version",
+          "masked_label",
+          "share_with_payers",
+          "updated_at"
+        ],
+        "title": "DestinationOut"
+      },
+      "DestinationRevealOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "masked_label": {
+            "type": "string",
+            "title": "Masked Label"
+          },
+          "share_with_payers": {
+            "type": "boolean",
+            "title": "Share With Payers"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "version",
+          "masked_label",
+          "share_with_payers",
+          "updated_at",
+          "details"
+        ],
+        "title": "DestinationRevealOut"
+      },
+      "ExpenseCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "payers": {
+            "items": {
+              "$ref": "#/components/schemas/Payer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Payers"
+          },
+          "split": {
+            "$ref": "#/components/schemas/SplitIn"
+          },
+          "client_expense_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Expense Id"
+          },
+          "source_receipt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Receipt Id"
+          },
+          "review_elapsed_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 86400000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Elapsed Ms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "amount_minor",
+          "payers",
+          "split"
+        ],
+        "title": "ExpenseCreate"
+      },
+      "ExpenseDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "split_mode": {
+            "type": "string",
+            "title": "Split Mode"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "payers": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Payers"
+          },
+          "shares": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Shares"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "spec": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Spec"
+          },
+          "breakdown": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Breakdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "amount_minor",
+          "currency",
+          "split_mode",
+          "occurred_on",
+          "version",
+          "state",
+          "payers",
+          "shares",
+          "created_at",
+          "updated_at",
+          "spec",
+          "breakdown"
+        ],
+        "title": "ExpenseDetailOut"
+      },
+      "ExpenseIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "payers": {
+            "items": {
+              "$ref": "#/components/schemas/Payer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Payers"
+          },
+          "split": {
+            "$ref": "#/components/schemas/SplitIn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "amount_minor",
+          "payers",
+          "split"
+        ],
+        "title": "ExpenseIn"
+      },
+      "ExpenseOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "split_mode": {
+            "type": "string",
+            "title": "Split Mode"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "payers": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Payers"
+          },
+          "shares": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Shares"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "amount_minor",
+          "currency",
+          "split_mode",
+          "occurred_on",
+          "version",
+          "state",
+          "payers",
+          "shares",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExpenseOut"
+      },
+      "ExpensePreviewIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food",
+                  "drinks",
+                  "groceries",
+                  "transport",
+                  "lodging",
+                  "entertainment",
+                  "daily",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "payers": {
+            "items": {
+              "$ref": "#/components/schemas/Payer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Payers"
+          },
+          "split": {
+            "$ref": "#/components/schemas/SplitIn"
+          },
+          "expense_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "amount_minor",
+          "payers",
+          "split"
+        ],
+        "title": "ExpensePreviewIn"
+      },
+      "ExpensePreviewOut": {
+        "properties": {
+          "breakdown": {
+            "$ref": "#/components/schemas/BreakdownOut"
+          },
+          "projected_settlement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SettlementPlanOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "breakdown",
+          "projected_settlement"
+        ],
+        "title": "ExpensePreviewOut"
+      },
+      "ExpenseSearchOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExpenseOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "total_amount_minor": {
+            "type": "integer",
+            "title": "Total Amount Minor"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total_count",
+          "total_amount_minor",
+          "next_cursor"
+        ],
+        "title": "ExpenseSearchOut"
+      },
+      "GroupCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "my_name": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "My Name"
+          },
+          "other_member_names": {
+            "items": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 99,
+            "title": "Other Member Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "my_name"
+        ],
+        "title": "GroupCreate"
+      },
+      "GroupOut": {
+        "properties": {
+          "public_id": {
+            "type": "string",
+            "title": "Public Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "ledger_version": {
+            "type": "integer",
+            "title": "Ledger Version"
+          },
+          "my_member_id": {
+            "type": "string",
+            "title": "My Member Id"
+          },
+          "is_owner": {
+            "type": "boolean",
+            "title": "Is Owner"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberOut"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "public_id",
+          "title",
+          "currency",
+          "ledger_version",
+          "my_member_id",
+          "is_owner",
+          "members"
+        ],
+        "title": "GroupOut"
+      },
+      "GroupStatsOut": {
+        "properties": {
+          "expense_count": {
+            "type": "integer",
+            "title": "Expense Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          },
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryStat"
+            },
+            "type": "array",
+            "title": "By Category"
+          },
+          "by_month": {
+            "items": {
+              "$ref": "#/components/schemas/MonthStat"
+            },
+            "type": "array",
+            "title": "By Month"
+          },
+          "by_member": {
+            "items": {
+              "$ref": "#/components/schemas/MemberStat"
+            },
+            "type": "array",
+            "title": "By Member"
+          },
+          "unconfirmed_transfer_count": {
+            "type": "integer",
+            "title": "Unconfirmed Transfer Count"
+          },
+          "unconfirmed_transfer_minor": {
+            "type": "integer",
+            "title": "Unconfirmed Transfer Minor"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expense_count",
+          "total_minor",
+          "by_category",
+          "by_month",
+          "by_member",
+          "unconfirmed_transfer_count",
+          "unconfirmed_transfer_minor",
+          "notes"
+        ],
+        "title": "GroupStatsOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IdentityOut": {
+        "properties": {
+          "identity_id": {
+            "type": "string",
+            "title": "Identity Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "assurance_level": {
+            "type": "string",
+            "title": "Assurance Level",
+            "default": "guest"
+          },
+          "passkey_count": {
+            "type": "integer",
+            "title": "Passkey Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "identity_id",
+          "kind"
+        ],
+        "title": "IdentityOut"
+      },
+      "InviteCreate": {
+        "properties": {
+          "ttl_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 720.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl Hours"
+          },
+          "max_uses": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Uses"
+          }
+        },
+        "type": "object",
+        "title": "InviteCreate"
+      },
+      "InviteOut": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          },
+          "max_uses": {
+            "type": "integer",
+            "title": "Max Uses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "expires_at",
+          "max_uses"
+        ],
+        "title": "InviteOut"
+      },
+      "InvitePreview": {
+        "properties": {
+          "group_title": {
+            "type": "string",
+            "title": "Group Title"
+          },
+          "unclaimed_members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberOut"
+            },
+            "type": "array",
+            "title": "Unclaimed Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_title",
+          "unclaimed_members"
+        ],
+        "title": "InvitePreview"
+      },
+      "IssueOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "IssueOut"
+      },
+      "ItemAllocationIn": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "equal",
+              "weight",
+              "units",
+              "exact"
+            ],
+            "title": "Mode"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/MemberValue"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Shares"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mode",
+          "shares"
+        ],
+        "title": "ItemAllocationIn"
+      },
+      "ItemIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Name"
+          },
+          "line_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Line Minor"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "default": 1
+          },
+          "tax_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "8",
+                  "10"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Group"
+          },
+          "allocation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemAllocationIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "line_minor"
+        ],
+        "title": "ItemIn"
+      },
+      "JoinRequest": {
+        "properties": {
+          "claim_member_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Member Id"
+          },
+          "new_member_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Member Name"
+          }
+        },
+        "type": "object",
+        "title": "JoinRequest"
+      },
+      "LoginVerifyIn": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 10,
+            "title": "Flow Id"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential"
+          },
+          "merge_current_guest": {
+            "type": "boolean",
+            "title": "Merge Current Guest",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "credential"
+        ],
+        "title": "LoginVerifyIn"
+      },
+      "MemberOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "claimed": {
+            "type": "boolean",
+            "title": "Claimed"
+          },
+          "is_me": {
+            "type": "boolean",
+            "title": "Is Me"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_name",
+          "role",
+          "claimed",
+          "is_me"
+        ],
+        "title": "MemberOut"
+      },
+      "MemberStat": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "title": "Member Id"
+          },
+          "paid_minor": {
+            "type": "integer",
+            "title": "Paid Minor"
+          },
+          "share_minor": {
+            "type": "integer",
+            "title": "Share Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "paid_minor",
+          "share_minor"
+        ],
+        "title": "MemberStat"
+      },
+      "MemberValue": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Member Id"
+          },
+          "value": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "member_id",
+          "value"
+        ],
+        "title": "MemberValue"
+      },
+      "MembersAdd": {
+        "properties": {
+          "names": {
+            "items": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "names"
+        ],
+        "title": "MembersAdd"
+      },
+      "MonthStat": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_minor": {
+            "type": "integer",
+            "title": "Total Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "count",
+          "total_minor"
+        ],
+        "title": "MonthStat"
+      },
+      "OptimizationOut": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "exact_subset_dp",
+              "greedy_fallback",
+              "none"
+            ],
+            "title": "Method"
+          },
+          "is_exact_minimum": {
+            "type": "boolean",
+            "title": "Is Exact Minimum"
+          },
+          "display_label": {
+            "type": "string",
+            "title": "Display Label"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "participant_limit",
+                  "time_limit"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "naive_transfer_count": {
+            "type": "integer",
+            "title": "Naive Transfer Count"
+          },
+          "optimized_transfer_count": {
+            "type": "integer",
+            "title": "Optimized Transfer Count"
+          },
+          "minimum_transfer_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Transfer Count"
+          },
+          "participant_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Count"
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms"
+          },
+          "assumptions": {
+            "$ref": "#/components/schemas/AssumptionsOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "is_exact_minimum",
+          "display_label",
+          "fallback_reason",
+          "naive_transfer_count",
+          "optimized_transfer_count",
+          "minimum_transfer_count",
+          "elapsed_ms",
+          "assumptions"
+        ],
+        "title": "OptimizationOut"
+      },
+      "OptionsOut": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "title": "Flow Id"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "options"
+        ],
+        "title": "OptionsOut"
+      },
+      "PasskeyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "device_type": {
+            "type": "string",
+            "enum": [
+              "single_device",
+              "multi_device"
+            ],
+            "title": "Device Type"
+          },
+          "backed_up": {
+            "type": "boolean",
+            "title": "Backed Up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname",
+          "created_at",
+          "last_used_at",
+          "device_type",
+          "backed_up"
+        ],
+        "title": "PasskeyOut"
+      },
+      "PayPayIn": {
+        "properties": {
+          "paypay_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_\\-]{3,40}$",
+            "title": "Paypay Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paypay_id"
+        ],
+        "title": "PayPayIn"
+      },
+      "Payer": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Member Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Amount Minor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "member_id",
+          "amount_minor"
+        ],
+        "title": "Payer"
+      },
+      "PayerDestinationOut": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "not_shared"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "masked_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Label"
+          },
+          "reference_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Code"
+          },
+          "changed_since_first_view": {
+            "type": "boolean",
+            "title": "Changed Since First View",
+            "default": false
+          },
+          "first_viewed_masked_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Viewed Masked Label"
+          },
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "このアプリは送金を実行しません。表示された振込先へ、ご自身の銀行アプリ等で送金してください。照合コードは送金の目印で、支払いの証明ではありません"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "title": "PayerDestinationOut"
+      },
+      "PlanOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "price_label": {
+            "type": "string",
+            "title": "Price Label"
+          },
+          "ocr_monthly_scans_min": {
+            "type": "integer",
+            "title": "Ocr Monthly Scans Min"
+          },
+          "ocr_monthly_scans_max": {
+            "type": "integer",
+            "title": "Ocr Monthly Scans Max"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "price_label",
+          "ocr_monthly_scans_min",
+          "ocr_monthly_scans_max",
+          "available",
+          "notes"
+        ],
+        "title": "PlanOut"
+      },
+      "PlannedTransferOut": {
+        "properties": {
+          "from_member_id": {
+            "type": "string",
+            "title": "From Member Id"
+          },
+          "to_member_id": {
+            "type": "string",
+            "title": "To Member Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_member_id",
+          "to_member_id",
+          "amount_minor"
+        ],
+        "title": "PlannedTransferOut"
+      },
+      "PlansOut": {
+        "properties": {
+          "ocr_available": {
+            "type": "boolean",
+            "title": "Ocr Available"
+          },
+          "ads_available": {
+            "type": "boolean",
+            "title": "Ads Available"
+          },
+          "billing_available": {
+            "type": "boolean",
+            "title": "Billing Available"
+          },
+          "ocr_free_monthly_scans": {
+            "type": "integer",
+            "title": "Ocr Free Monthly Scans"
+          },
+          "ocr_reward_scans_per_ad": {
+            "type": "integer",
+            "title": "Ocr Reward Scans Per Ad"
+          },
+          "ocr_monthly_scan_cap": {
+            "type": "integer",
+            "title": "Ocr Monthly Scan Cap"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanOut"
+            },
+            "type": "array",
+            "title": "Plans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ocr_available",
+          "ads_available",
+          "billing_available",
+          "ocr_free_monthly_scans",
+          "ocr_reward_scans_per_ad",
+          "ocr_monthly_scan_cap",
+          "plans"
+        ],
+        "title": "PlansOut"
+      },
+      "QuotaOut": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "free": {
+            "type": "integer",
+            "title": "Free"
+          },
+          "cap": {
+            "type": "integer",
+            "title": "Cap"
+          },
+          "used": {
+            "type": "integer",
+            "title": "Used"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "free",
+          "cap",
+          "used",
+          "remaining"
+        ],
+        "title": "QuotaOut"
+      },
+      "ReceiptIn": {
+        "properties": {
+          "receipt_total_minor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Receipt Total Minor"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemIn"
+            },
+            "type": "array",
+            "maxItems": 300,
+            "minItems": 1,
+            "title": "Items"
+          },
+          "adjustments": {
+            "items": {
+              "$ref": "#/components/schemas/AdjustmentIn"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Adjustments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "receipt_total_minor",
+          "items"
+        ],
+        "title": "ReceiptIn"
+      },
+      "ReceiptOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "job_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job State"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "failure_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Message"
+          },
+          "duplicate": {
+            "type": "boolean",
+            "title": "Duplicate",
+            "default": false
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          },
+          "expense_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Id"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          },
+          "quota": {
+            "$ref": "#/components/schemas/QuotaOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "job_state",
+          "attempts",
+          "failure_message",
+          "image_url",
+          "width",
+          "height",
+          "expense_id",
+          "draft",
+          "run",
+          "quota"
+        ],
+        "title": "ReceiptOut"
+      },
+      "RegisterOptionsIn": {
+        "properties": {
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "title": "RegisterOptionsIn"
+      },
+      "RegisterVerifyIn": {
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 10,
+            "title": "Flow Id"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flow_id",
+          "credential"
+        ],
+        "title": "RegisterVerifyIn"
+      },
+      "RevisionOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "change_kind": {
+            "type": "string",
+            "title": "Change Kind"
+          },
+          "spec": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Spec"
+          },
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result"
+          },
+          "changed_by_me": {
+            "type": "boolean",
+            "title": "Changed By Me"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "change_kind",
+          "spec",
+          "result",
+          "changed_by_me",
+          "created_at"
+        ],
+        "title": "RevisionOut"
+      },
+      "SessionStateOut": {
+        "properties": {
+          "identity_id": {
+            "type": "string",
+            "title": "Identity Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "assurance_level": {
+            "type": "string",
+            "title": "Assurance Level"
+          },
+          "passkey_count": {
+            "type": "integer",
+            "title": "Passkey Count"
+          },
+          "merged_groups": {
+            "type": "integer",
+            "title": "Merged Groups",
+            "default": 0
+          },
+          "unmerged_groups": {
+            "type": "integer",
+            "title": "Unmerged Groups",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "identity_id",
+          "kind",
+          "assurance_level",
+          "passkey_count"
+        ],
+        "title": "SessionStateOut"
+      },
+      "SettlementPlanOut": {
+        "properties": {
+          "ledger_version": {
+            "type": "integer",
+            "title": "Ledger Version"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceRowOut"
+            },
+            "type": "array",
+            "title": "Balances"
+          },
+          "balance_sum_minor": {
+            "type": "integer",
+            "title": "Balance Sum Minor"
+          },
+          "transfers": {
+            "items": {
+              "$ref": "#/components/schemas/PlannedTransferOut"
+            },
+            "type": "array",
+            "title": "Transfers"
+          },
+          "optimization": {
+            "$ref": "#/components/schemas/OptimizationOut"
+          },
+          "locked_transfers": {
+            "items": {
+              "$ref": "#/components/schemas/TransferOut"
+            },
+            "type": "array",
+            "title": "Locked Transfers"
+          },
+          "locked_progress": {
+            "$ref": "#/components/schemas/SettlementProgressOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ledger_version",
+          "currency",
+          "balances",
+          "balance_sum_minor",
+          "transfers",
+          "optimization",
+          "locked_transfers",
+          "locked_progress"
+        ],
+        "title": "SettlementPlanOut"
+      },
+      "SettlementProgressOut": {
+        "properties": {
+          "unpaid_count": {
+            "type": "integer",
+            "title": "Unpaid Count"
+          },
+          "unpaid_minor": {
+            "type": "integer",
+            "title": "Unpaid Minor"
+          },
+          "reported_unconfirmed_count": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Count"
+          },
+          "reported_unconfirmed_minor": {
+            "type": "integer",
+            "title": "Reported Unconfirmed Minor"
+          },
+          "recipient_confirmed_count": {
+            "type": "integer",
+            "title": "Recipient Confirmed Count"
+          },
+          "recipient_confirmed_minor": {
+            "type": "integer",
+            "title": "Recipient Confirmed Minor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unpaid_count",
+          "unpaid_minor",
+          "reported_unconfirmed_count",
+          "reported_unconfirmed_minor",
+          "recipient_confirmed_count",
+          "recipient_confirmed_minor"
+        ],
+        "title": "SettlementProgressOut",
+        "description": "送金の進み具合。申告済み(未確認)と受取確認済みを別々に数える。"
+      },
+      "SharingIn": {
+        "properties": {
+          "share_with_payers": {
+            "type": "boolean",
+            "title": "Share With Payers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "share_with_payers"
+        ],
+        "title": "SharingIn"
+      },
+      "SplitIn": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "equal",
+              "weight",
+              "percentage",
+              "exact",
+              "units",
+              "itemized"
+            ],
+            "title": "Mode"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/MemberValue"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Shares"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "title": "SplitIn"
+      },
+      "TransferDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "from_member_id": {
+            "type": "string",
+            "title": "From Member Id"
+          },
+          "to_member_id": {
+            "type": "string",
+            "title": "To Member Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unpaid",
+              "reported_paid",
+              "recipient_confirmed",
+              "superseded"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label"
+          },
+          "is_recipient_confirmed": {
+            "type": "boolean",
+            "title": "Is Recipient Confirmed"
+          },
+          "group_public_id": {
+            "type": "string",
+            "title": "Group Public Id"
+          },
+          "from_name": {
+            "type": "string",
+            "title": "From Name"
+          },
+          "to_name": {
+            "type": "string",
+            "title": "To Name"
+          },
+          "my_role": {
+            "type": "string",
+            "enum": [
+              "payer",
+              "payee"
+            ],
+            "title": "My Role"
+          },
+          "bank_evidence_state": {
+            "type": "string",
+            "title": "Bank Evidence State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_id",
+          "from_member_id",
+          "to_member_id",
+          "amount_minor",
+          "currency",
+          "status",
+          "version",
+          "status_label",
+          "is_recipient_confirmed",
+          "group_public_id",
+          "from_name",
+          "to_name",
+          "my_role",
+          "bank_evidence_state"
+        ],
+        "title": "TransferDetailOut"
+      },
+      "TransferOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "from_member_id": {
+            "type": "string",
+            "title": "From Member Id"
+          },
+          "to_member_id": {
+            "type": "string",
+            "title": "To Member Id"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unpaid",
+              "reported_paid",
+              "recipient_confirmed",
+              "superseded"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label"
+          },
+          "is_recipient_confirmed": {
+            "type": "boolean",
+            "title": "Is Recipient Confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_id",
+          "from_member_id",
+          "to_member_id",
+          "amount_minor",
+          "currency",
+          "status",
+          "version",
+          "status_label",
+          "is_recipient_confirmed"
+        ],
+        "title": "TransferOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

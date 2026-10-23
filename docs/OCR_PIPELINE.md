@@ -1,0 +1,214 @@
+# レシート読み取り(OCR)パイプライン仕様(Phase 3 実装済み)
+
+実装: `apps/api/app/ocr/`(API と DB モデルを共有)、ワーカーのコンテナは `apps/ocr-worker/Dockerfile`。
+
+## 1. 全体の流れ
+
+```
+[画面] 画像を選ぶ
+  → POST /groups/{id}/receipts(API: 検証・EXIF除去・保存・利用枠を1枚消費・ジョブ登録)
+  → receipt_jobs(PostgreSQL のキュー)
+  → OCR ワーカー(別プロセス): 前処理 → PaddleOCR → 日本語レシート解析 → ocr_runs に生結果と下書きを保存
+  → [画面] 下書きを画像と見比べて確認・訂正 → 負担者を選ぶ → POST /expenses(source_receipt_id 付き)
+  → Phase 1 のエンジンで検算して確定。下書きとの差分を ocr_corrections に記録(未検証)
+```
+
+- 読み取り結果は常に**下書き**。負担者は自動で決めない。合計が合わない場合は差額を表示し、補正しない。
+- ワーカーの heartbeat が `ocr_worker_heartbeat_ttl_seconds`(既定 90 秒)以内に無い場合は、アップロードを
+  503 `OCR_UNAVAILABLE` で断り、画面は「停止中・手入力してください」と表示する(待ち続けるジョブを作らない)。
+
+## 2. アップロード(API 側、Pillow のみ)
+
+| 検査 | 内容 |
+|---|---|
+| サイズ | `receipt_max_bytes`(既定 10MB)超は 413 |
+| 形式 | JPEG / PNG / WebP のみ(実体を Pillow で検査。拡張子・Content-Type は信用しない)。HEIC は 415 |
+| 展開爆弾 | `receipt_max_pixels`(既定 4,000 万画素)超は拒否 |
+| メタデータ | EXIF の向きを反映したうえで、EXIF・ICC を付けずに JPEG で保存し直す(位置情報を保存しない) |
+| 重複 | 元画像の SHA-256 が同じグループ内で一致すれば既存のレシートを返す(枠を消費しない)。同時アップロードは一意インデックスで判定 |
+| 保存 | `receipt_storage_dir/{receipt_id}.jpg`(DB には置かない)。一時ファイル→rename で書き込む |
+| 保存期間 | `receipt_image_retention_days`(既定 30 日)。`python -m app.ocr.cli purge-images` で画像を削除し、同時に `ocr_runs.tokens`(生の文字)と下書きの `lines`(支払・会員番号などの行を含みうる)も消す。商品・調整・合計と訂正記録は残る。定期実行は `scripts/warilink_purge_job.sh`(P05、`infra/ops/README.md`) |
+| 閲覧 | `GET .../receipts/{id}/image` はグループのメンバーのみ(他は 404)、`Cache-Control: private, no-store` |
+
+### 2.1 確認の順序と濫用対策(2026-10-20、P04)
+
+重い処理(デコード・EXIF 反映・JPEG 再エンコード)は、安い確認をすべて通った後にだけ行う。
+
+| 順 | 確認 | 拒否 |
+|---|---|---|
+| 0 | `Content-Length`(multipart 解析・一時ファイル書き込みの前。ルートクラス `LimitedUploadRoute`) | 411 / 413 |
+| 1 | グループのメンバー | 404 |
+| 2 | 読み込んだバイト数 | 413 / 422 |
+| 3 | 同じ画像(元画像の SHA-256。枠を消費せず既存を返す) | - |
+| 4 | ワーカーの稼働 | 503 `OCR_UNAVAILABLE` |
+| 5 | 利用枠(ロックなしの事前確認) | 429 `OCR_QUOTA_EXCEEDED` |
+| 6 | 流量: 利用者 10 分 `ocr_rate_identity_per_10min`(5)、グループ 1 時間 `ocr_rate_group_per_hour`(30)、利用者の読み取り待ち `ocr_max_pending_per_identity`(3) | 429 `OCR_RATE_LIMITED` |
+| 6 | 全体の読み取り待ち `ocr_max_queue_backlog`(100) | 503 `OCR_BUSY` |
+| 7 | ヘッダーだけで形式・寸法: 画素数 `receipt_max_pixels`、1 辺 `receipt_max_side`(12,000px) | 413 `IMAGE_TOO_MANY_PIXELS` / 415 |
+| 8 | デコード・EXIF 除去・再エンコード | 415 |
+| 9 | 利用者の行をロックして枠を確保 → グループの行をロックして流量を再確認(同時アップロードでも超えない) → 保存 | 429 |
+
+- Pillow の `MAX_IMAGE_PIXELS` は上限の 2 倍までは警告だけなので、寸法を明示的に比べて拒否する。
+- ゲストは Cookie を消せば別の利用者になれる。そのため利用者単位の枠だけに頼らず、グループ単位と全体の待ち行列でも CPU の消費を抑える。
+  IP 単位の制限は入れていない(共有回線の誤検知を避けるため。必要ならリバースプロキシ側で行う)。
+- 保存後に DB への登録が失敗した場合は、画像ファイルを消し、枠も消費しない(トランザクションごと取り消す)。
+- デコード時間の上限(タイムアウト)は設けていない。画素数と 1 辺の上限で処理量を抑えている。
+
+## 3. ジョブ(DB キュー)
+
+- 取得: `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING`。同時に動く複数ワーカーが同じジョブを取らない。
+- lease: 取得時に `lease_expires_at = now + ocr_job_lease_seconds`(既定 120 秒)。ワーカーが落ちて期限が切れたら別ワーカーが再取得する。
+- 書き込みの保護: 完了・失敗の記録は「`state=running` かつ `lease_owner` が自分」のときだけ。期限切れ後に遅れて戻った古いワーカーの結果は捨てる。
+- 再試行: OCR エンジン内部の例外は `ocr_job_max_attempts`(既定 3)まで、`backoff × 試行回数` 秒後に再試行。超えたら `dead`。
+- 画像不良(読めない・小さすぎる)は再試行せず `failed`。
+- `dead` / `failed` のときは利用枠を返還し、画面で手入力へ案内する。返還はレシートごとに 1 回だけ(一意制約)。
+
+## 4. 前処理・品質チェック(OpenCV、ワーカー側)
+
+- 長辺 2000px を超える画像は縮小。短辺 300px 未満は `TOO_SMALL` で不合格。
+- 暗さ・コントラスト・ぼけ(ラプラシアン分散)を計測して `ocr_runs.quality` に保存し、しきい値未満なら警告を表示する(不合格にはしない)。
+- しきい値(`preprocess.THRESHOLDS`)は合成画像で決めた暫定値。**実レシートでの調整は未実施**。
+- 反射(白飛び)の検出は、白い紙と区別できず誤検出したため実装していない。
+- 文書の歪み補正・向き判定(PaddleOCR の doc orientation / unwarping)は無効。効果は未評価。
+- 傾き補正(P11、`cv-0.2.0`): **既定は無効**。`WARILINK_OCR_DESKEW=1` で有効。
+  - 推定: 縮小画像(長辺 600px)を ±10° の範囲で回転し、横方向の投影の分散が最大になる角度(0.5° → 0.1° 刻み、計 52 回)。
+  - 補正するのは |角度| が 0.5°〜9.5° で、信頼度(ピーク / 中央値)が 1.6 以上のときだけ。範囲外・低信頼は補正しない(誤補正を避ける)。
+  - 回転後も長辺は 2000px 以内。行のまとめは補正後(水平)の座標で行い、保存・表示する BBox は 4 隅を逆変換して元の向きへ戻す
+    (補正後の座標は画面に出さない)。`quality` に `deskew_angle` / `deskew_confidence` / `deskew_applied` と `preprocess_version` を記録。
+  - 以前に保存した下書きは再解析しない(版は `ocr_runs.preprocess_version` で区別)。
+  - 比較(2026-10-21、macOS arm64、本物の PaddleOCR、同じ固定の合成データ 12 枚・傾き 3〜8°、高負荷の環境で計測):
+
+    | | 補正なし | 補正あり |
+    |---|---|---|
+    | receipt_exact_rate | 0.00 | 1.00 |
+    | line_recall | 0.085 | 1.00 |
+    | 平均 / p95 時間 | 5.8 / 7.3 秒 | 5.6 / 6.8 秒 |
+    | 最大メモリ(プロセス) | 1,636 MB | 1,694 MB |
+
+    傾いた合成画像では大きく改善したが、**合成データ(同じ作者の生成器)での結果であり、実レシートでの効果は未確認**。
+    既定は無効のまま、実レシートの評価(§9)で悪化がないことを確かめてから有効にする。
+
+## 5. OCR エンジン(交換可能)
+
+`OcrAdapter` プロトコル(`recognize(image) -> [OcrToken(text, score, bbox)]`, `model_info()`)。現在の実装は
+`PaddleOcrAdapter` のみ。
+
+| 項目 | 値 |
+|---|---|
+| ライブラリ | paddleocr 3.7.0 / paddlepaddle 3.3.1(CPU)/ paddlex 3.7.2 |
+| モデル | `PP-OCRv6_medium_det` + `PP-OCRv6_medium_rec`(名前で固定。Apache-2.0) |
+| 取得元 | 初回に PaddleX が公式配布元から自動取得。コンテナではビルド時に取得してイメージに含める |
+| 記録 | `ocr_runs` に モデル名・版・パラメータ・重みファイルの SHA-256(先頭16桁)・処理時間・エラー |
+| スレッド | `ocr_cpu_threads`(未指定なら min(4, CPU数))。**CPU 数を超えると linux/aarch64 で推論中に SIGSEGV**(PaddleX の既定 10 で発生。2026-10-19 に Docker Desktop の 8CPU VM で確認) |
+
+### 動作確認した環境(2026-10-19)
+
+| 環境 | 結果 |
+|---|---|
+| macOS arm64(M3)/ Python 3.13 / PyPI の wheel | 動作。合成レシート 1 枚あたり約 2.6〜3.7 秒(CPU) |
+| linux/arm64 コンテナ(python:3.13-slim)/ Paddle 公式配布元の aarch64 wheel | 動作(cpu_threads ≤ CPU 数)。約 3.4 秒/枚 |
+| linux/amd64 | **未確認** |
+
+### 実行環境とモデルの固定(P11 で再確認、2026-10-21)
+
+paddleocr 3.7.0 / paddlex 3.7.2 / paddlepaddle 3.3.1(CPU)/ opencv-contrib-python 4.10、モデル `PP-OCRv6_medium_det` / `PP-OCRv6_medium_rec`
+(Apache-2.0)。モデル名は設定で固定し、新しいモデル・重みへ自動で切り替えない。重みの SHA-256(先頭 16 桁)は `ocr_runs.params` に記録。
+
+## 6. 日本語レシート解析(ルールベース、`parser.py`)
+
+1. トークンを縦方向の重なりで行にまとめる(NFKC 正規化、全角数字・¥記号の統一)。
+2. 行の役割を判定: 商品 / 小計 / 税(外税・税率別)/ 内税表示 / 合計 / 値引・割引 / クーポン / サービス料 / 支払・釣銭等(無視)/ 日付。
+3. 金額: 行末寄りの「¥」「円」「桁区切り」付きの数値を優先。`2¥1,300` のような数量との連結、`▲100` `-¥100` の負号に対応。
+   長音記号「ー」は負号とみなさない(コーヒー等)。
+4. 数量: `@650 x2`、`2個`、`x2`、名前末尾の数字。単価×数量と金額が合わない行は「要確認」。
+5. 2 行に分かれた商品(名前の行+金額の行)と、傾きで「小計」と金額が別行になった場合(どちらの順でも)を結合。
+6. 軽減税率の記号(※・軽)→ 8%。8% と 10% の税行が両方あれば記号なしの商品を 10% とする。
+7. 税の扱い: `明細+調整+税 = 合計` なら外税として税を調整行にする。`明細+調整 = 合計` または「内税」表記なら内税として税行を調整に入れない(二重計上防止)。
+8. 合計が見つからない・合わない場合は警告と差額を返す(補正しない)。確信度が `ocr_low_confidence`(既定 0.90)未満の行は「要確認」。
+9. 合計より後の行(お預り・お釣り・ポイント等)は商品にしない。
+
+### 6.1 rule-ja-0.2.0 での変更(2026-10-20、P10)
+
+修正前(0.1.0)は最初の「合計」で以降の行を読み飛ばしていたため、「A 300 → 合計 300 → B 200 → 合計 500」で B を落とし、
+差額 0・警告なしになっていた(静かな誤り。テストで再現してから修正)。
+
+| 項目 | 0.2.0 の扱い |
+|---|---|
+| 合計 | 全行から候補を集め(`total_candidates`)、支払(お預り・現金・カード等)より前の**最後の候補**を最終合計にする。値の違う候補が複数あれば `MULTIPLE_TOTALS`。合計を明細に合わせて補正しない |
+| 最終合計より後の行 | 商品・値引は明細に入れず `ITEM_AFTER_TOTAL` / `ADJUSTMENT_AFTER_TOTAL`(行番号つき)。支払より後の行も同じ |
+| 小計 | 最終合計より前の最後の小計 |
+| ポイント | 付与・残高・累計は無視。合計より前の「利用・値引」は要確認の割引(理由 `POINT_USAGE`)。合計より後の「充当・払い」は支払手段として金額を変えず、どちらも `POINT_USAGE_AMBIGUOUS` |
+| 返品・取消 | 要確認の値引(理由 `REFUND`) |
+| 印字された点数 | 「お買上点数 3点」などを `item_count_printed` に読み、数量の合計と違えば `ITEM_COUNT_MISMATCH`(合計が一致していても知らせる) |
+| 調整行の理由 | `adjustments[].reasons` を追加(画面の「要確認」に表示)。既存のキーは変えていない |
+
+既知の限界: 商品名に「カード」「現金」などの支払の語を含む行は支払として扱われ、明細に入らない(以前から)。合計が一致し、
+点数の印字もない場合の読み落とし(OCR が行ごと検出しなかった等)は、差額が出ない限り検出できない。
+
+出力(`ocr_runs.draft`): `items[{id, name, quantity, line_minor, tax_group, confidence, needs_review, reasons, bbox, source_lines}]`,
+`adjustments[...]`, `subtotal_minor`, `total_minor`, `tax_mode`, `difference_minor`, `warnings`, `lines[行ごとの役割判定]`, `image_scale`。
+
+## 7. 確認画面
+
+- 画像の上に各行の bbox を重ねて表示。「要確認」の行は橙色。入力欄にフォーカスすると対応する bbox を強調。
+- 下書きから商品・調整行・合計・店名を入力欄に入れる。負担者は空欄(未割当のままでは登録不可)。
+- 登録時に `source_receipt_id` と確認にかかった時間(`review_elapsed_ms`)を送る。
+
+## 8. 訂正の記録と評価
+
+- `ocr_corrections`: 下書きと確定内容の差分を 1 項目ずつ保存。分類は
+  `recognition`(文字・金額の誤認識)/ `structure`(税率・種類など対応付けの誤り)/ `missing`(読み落とし)/ `spurious`(余分な行)。
+- すべて `label_status=proposed`。**利用者の訂正をそのまま正解ラベルにしない**。検証者の確認と、利用者の同意(Phase 6)がそろうまで評価・学習に使わない。
+- 評価 CLI(`python -m app.ocr.cli evaluate DIR`)は `label_status` が `verified`(検証済み)または `synthetic`(合成)のラベルだけを使う。
+
+| 指標 | 定義 |
+|---|---|
+| line_recall / line_precision | (商品名・数量・金額)が完全一致した行 / 正解の行数・読み取った行数 |
+| receipt_exact_rate | 全商品・調整額・合計がすべて一致したレシートの割合 |
+| total_correct_rate | 合計金額が一致した割合 |
+| amount_error_rate | 正解に存在しない金額を読み取った行 / 読み取った行 |
+| latency_ms_mean / p95 | 前処理+認識の時間 |
+| 平均確認時間 | 実運用の `receipts.review_elapsed_ms`(`cli stats`)。オフライン評価では測れない |
+
+- `--baseline 前回結果.json` を渡すと、同じデータセット(画像+ラベルのハッシュ一致)で指標が1つでも悪化した候補を `rejected`(終了コード 2)とする。データセットが違えば `incomparable`。
+- `--reuse-tokens` で保存済みの認識結果を使い、パーサーだけを評価できる(パーサー調整用)。
+
+### 8.1 評価の再現性と昇格停止ゲート(eval-0.2.0、2026-10-21、P12)
+
+修正前は、指標がすべて未測定(None)でも `accepted`、調整行の種類が違っても金額が同じなら完全一致、と判定していた(再現して記録)。
+
+| 項目 | eval-0.2.0 |
+|---|---|
+| 完全一致 | 商品(名前・数量・金額)・合計・調整行(**種類+金額**)。税区分(8% / 10%)まで一致したかは `structure_exact_rate` で別に示す |
+| 件数 | 0 件は `blocked`、`--min-samples`(既定 30)未満は `insufficient`。どちらも採否を判定しない(終了コード 3) |
+| 信頼区間 | `receipt_exact_ci95` / `structure_exact_ci95` / `total_correct_ci95`(Wilson、95%) |
+| 速度・原価 | `latency_ms_mean` / `latency_ms_p95` / `cpu_seconds_per_receipt`(評価プロセスの CPU 時間) |
+| 出所の記録 | `provenance`: 評価の版、データセット・画像のハッシュ、ラベルの版、パーサー・前処理の版、モデル(名前・版・重みのハッシュ)、トークンキャッシュの版 |
+| 比較 | 同じデータセット・同じ評価の版で、モデル / 前処理 / パーサーのうち変わったのが 1 つ以下のときだけ。2 つ以上同時に変わっていれば `incomparable`。未測定の指標があれば `blocked` |
+| トークンキャッシュ | 版 2: モデル・前処理・画像の SHA-256 を記録。古い形式・画像の変更・別モデルとの混在は `blocked`(終了コード 3) |
+| 出所の区分 | `source`: `synthetic` / `public`(CORD・SROIE 等)/ `real_ja`。`by_source` に別々に集計。出所の無い verified ラベルは使わない |
+| 実レシート | `real_ja` は `label_status=verified`・`consent_eval: true`・`split: tune|holdout` がそろったものだけ。精度の判断は `real_ja_holdout` だけで行い、調整(tune)に使ったデータで成功を宣言しない |
+
+- 終了コード: 0 = 評価できた(基準があれば accepted)、2 = rejected、3 = incomparable / blocked / insufficient。
+- 公開データ(CORD・SROIE)は**取り込んでいない**。主に英語・インドネシア語などで、日本語の精度の根拠にならない。
+  使う場合はデータセットごとのライセンス・利用条件を確認してから(docs/OSS_REUSE_PLAN.md)。
+- **実レシートでの評価は未実施**(データ未提供)。合成データでの結果は、商用の精度として扱わない。
+
+### 合成データでの結果(参考。実レシートの精度ではない)
+
+合成レシート生成(`cli synth`)は、このパーサーと同じ作者が作ったもので、配置・書式の多様性は実レシートより
+はるかに小さい。以下は「パイプラインが動くこと」の確認であり、精度の主張には使わない。
+
+| データ | 件数 | receipt_exact_rate | 備考 |
+|---|---|---|---|
+| synth easy(seed 7, macOS) | 20 | 1.00 | |
+| synth hard(seed 11, 傾き・ぼけ・ノイズ, macOS) | 30 | 1.00 | 初回 0.967 → 小計と金額の行分かれを修正 |
+| synth hard(seed 5, linux/arm64 コンテナ) | 10 | 1.00 | |
+| synth hard(seed 11, macOS、eval-0.2.0 / rule-ja-0.2.0 / cv-0.2.0、2026-10-21) | 30 | 1.00(95% CI 0.89–1.00) | **structure_exact_rate 0.77(CI 0.59–0.88)**: 軽減税率の記号があり税の行が無い(内税)レシートで、記号なしの商品を 10% と判定できていない。パーサーの残課題(未修正)。平均 3.5 秒・CPU 3.5 秒/枚 |
+
+## 9. 利用者(あなた)が行う作業
+
+- 実レシートでの精度調整・目視確認: `cli recognize 画像 --json` で 1 枚ずつ確認し、正解ラベル(`label_status: "verified"`)を付けた
+  データセットで `cli evaluate` を実行する。ラベル形式は合成データの JSON と同じ(`items[{name, quantity, line_minor, tax_group}]`, `adjustments[{kind, amount_minor}]`, `total_minor`)。
+- 調整候補: `ocr_low_confidence`、前処理のしきい値、`ocr_det_model` / `ocr_rec_model`(例: `PP-OCRv6_small_*`)、パーサーのキーワード。
+- 実レシート画像・ラベルはリポジトリに入れない(個人情報)。
